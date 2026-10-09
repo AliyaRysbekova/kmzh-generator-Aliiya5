@@ -631,22 +631,99 @@ JSON ЖАУАБЫНЫҢ ҚҰРЫЛЫМЫ:
         }
 
         function parseTrialJson(text) {
-            let raw = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-            const first = raw.indexOf('{'), last = raw.lastIndexOf('}');
-            if (first < 0 || last < first) throw new Error('JSON табылмады. ЖИ жауабын толық көшіріңіз.');
+            let raw = String(text || '').replace(/^\uFEFF/, '').trim();
+            raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+            // If the AI added short commentary, isolate the JSON object.
+            const first = raw.indexOf('{');
+            const last = raw.lastIndexOf('}');
+            if (first < 0 || last < first) {
+                throw new Error('JSON табылмады. ЖИ жауабын толық көшіріңіз.');
+            }
             raw = raw.slice(first, last + 1);
-            try { return JSON.parse(raw); } catch (e) {
-                // Common model mistake: raw line breaks inside JSON string values.
-                let fixed = '', inString = false;
-                for (let i = 0; i < raw.length; i++) {
-                    const ch = raw[i];
-                    if (ch === '\\' && inString) { fixed += ch + (raw[++i] || ''); continue; }
-                    if (ch === '"') { inString = !inString; fixed += ch; continue; }
-                    if (inString && ch === '\n') fixed += '\\n';
-                    else if (inString && ch === '\r') {}
-                    else fixed += ch;
+
+            // First try standard JSON with no modifications.
+            try { return JSON.parse(raw); } catch (_) {}
+
+            // Repair common AI output issues: unescaped newlines/control chars,
+            // and invalid backslash escapes such as \rightarrow or \( inside strings.
+            let repaired = '';
+            let inString = false;
+            for (let i = 0; i < raw.length; i++) {
+                const ch = raw[i];
+
+                if (inString && ch === '\\') {
+                    const next = raw[i + 1];
+                    if (next === undefined) {
+                        repaired += '\\\\';
+                        continue;
+                    }
+                    // A LaTeX-like command such as \rightarrow starts with a character
+                    // that is also a legal JSON escape (\r); preserve it as literal text.
+                    const commandMatch = raw.slice(i).match(/^\\([A-Za-z]{2,})/);
+                    const textCommands = new Set([
+                        'alpha','beta','gamma','delta','epsilon','theta','lambda','mu','pi','sigma','omega',
+                        'rightarrow','leftarrow','Rightarrow','Leftarrow','leftrightarrow','Leftrightarrow',
+                        'frac','sqrt','times','cdot','approx','neq','leq','geq','infty','sum','int','partial',
+                        'begin','end','text','mathrm','mathbf','displaystyle','overline','underline','vec',
+                        'pm','div','forall','exists','angle','degree','circ','Delta','Omega','Sigma','Gamma'
+                    ]);
+                    if (commandMatch && textCommands.has(commandMatch[1])) {
+                        repaired += '\\\\';
+                        continue;
+                    }
+                    // Keep valid JSON escape sequences intact.
+                    if ('"\\/bfnrt'.includes(next)) {
+                        repaired += ch + next;
+                        i++;
+                        continue;
+                    }
+                    // Keep a valid Unicode escape intact.
+                    if (next === 'u' && /^[0-9a-fA-F]{4}$/.test(raw.slice(i + 2, i + 6))) {
+                        repaired += raw.slice(i, i + 6);
+                        i += 5;
+                        continue;
+                    }
+                    // Invalid JSON escape: make the slash literal and process next char normally.
+                    repaired += '\\\\';
+                    continue;
                 }
-                return JSON.parse(fixed.replace(/,\s*([}\]])/g, '$1'));
+
+                if (ch === '"') {
+                    inString = !inString;
+                    repaired += ch;
+                    continue;
+                }
+
+                if (inString) {
+                    if (ch === '\n') repaired += '\\n';
+                    else if (ch === '\r') repaired += '\\r';
+                    else if (ch === '\t') repaired += '\\t';
+                    else if (ch.charCodeAt(0) < 0x20) repaired += '\\u' + ch.charCodeAt(0).toString(16).padStart(4, '0');
+                    else repaired += ch;
+                } else {
+                    repaired += ch;
+                }
+            }
+
+            // Remove trailing commas only outside quoted strings.
+            let cleaned = '';
+            inString = false;
+            for (let i = 0; i < repaired.length; i++) {
+                const ch = repaired[i];
+                if (ch === '"' && (i === 0 || repaired[i - 1] !== '\\')) inString = !inString;
+                if (!inString && ch === ',') {
+                    let j = i + 1;
+                    while (j < repaired.length && /\s/.test(repaired[j])) j++;
+                    if (repaired[j] === '}' || repaired[j] === ']') continue;
+                }
+                cleaned += ch;
+            }
+
+            try {
+                return JSON.parse(cleaned);
+            } catch (error) {
+                throw new Error('ЖИ жауабында JSON қатесі бар, оны автоматты түзету мүмкін болмады: ' + error.message + '. ChatGPT/Gemini-ге «Тек жарамды JSON бер, мәтін ішінде математикалық белгілеулерді LaTeX қиғаш сызығынсыз жаз» деп сұрап, жауапты қайта көшіріңіз.');
             }
         }
 
@@ -708,7 +785,7 @@ JSON ЖАУАБЫНЫҢ ҚҰРЫЛЫМЫ:
                 if ((/JSON құрылымы|JSON structure/i.test(rawAnswer) && /(?:"(?:teacher|student|resources|lessonGoal)"\s*:\s*"(?:\.{3,}|…+)"|\bTODO\b|\bPLACEHOLDER\b)/i.test(rawAnswer)) || /Сіз дайын сабақтың орнына үлгі құрылымды/.test(msg)) {
                     setAnswerStatus('Сіз бос JSON үлгісін көшірген сияқтысыз. Промптты ChatGPT немесе Gemini-ге жіберіңіз, содан кейін толық жасалған ҚМЖ жауабын көшіріңіз. Егер бұл нақты жауап болса, «ҚМЖ құру» батырмасын қайта басып көріңіз.', 'error');
                 } else if (/JSON|Unexpected|position|property|token|күтілмеді|жарамды/i.test(msg) && /құрылым|табылмады|Unexpected|token|property|position/i.test(msg)) {
-                    setAnswerStatus('Жауап JSON пішімінде дұрыс емес. ChatGPT/Gemini-ге: «Жауапты толық жарамды JSON етіп қайта бер, Markdown және түсіндірме қоспа» деп жазыңыз. Толық жауапты қайта көшіріңіз. Техникалық мәлімет: ' + msg, 'error');
+                    setAnswerStatus('Жауап JSON пішімінде дұрыс емес. ChatGPT/Gemini-ге: «Тек жарамды JSON қайтар. Мәтін ішінде \\rightarrow, \\alpha сияқты қиғаш сызықты формулаларды қолданба; Markdown және түсіндірме қоспа» деп жазыңыз. Толық жауапты қайта көшіріңіз. Техникалық мәлімет: ' + msg, 'error');
                 } else {
                     setAnswerStatus(msg, 'error');
                 }
