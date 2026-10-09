@@ -204,7 +204,7 @@
         <textarea id="aiPrompt" readonly rows="8" class="w-full text-xs p-3 border rounded-lg mb-2 bg-slate-50"></textarea>
         <button type="button" id="copyBtn" onclick="copyTrialPrompt()" class="mb-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Промптты көшіру</button>
         <div class="rounded-lg border border-amber-300 bg-amber-50 text-amber-950 p-3 mb-3 text-sm">
-          <strong>Маңызды:</strong> жоғарыдағы промптты ChatGPT немесе Gemini-ге жіберіңіз. ЖИ нақты сабақ жоспарын жасағаннан кейін, <strong>ЖИ сабақ жоспарын жазып болғаннан кейін, ЖИ-дің соңғы толық JSON жауабын көшіріп қойыңыз.
+          <strong>Маңызды:</strong> жоғарыдағы промптты ChatGPT немесе Gemini-ге жіберіңіз. ЖИ нақты сабақ жоспарын жазып болғаннан кейін, оның соңғы толық JSON жауабын көшіріп қойыңыз.
           <br>«JSON құрылымы», үлгі код немесе ішінде <code>...</code> тұрған шаблонды қоймаңыз — оның орнына нақты мұғалім әрекеттері, тапсырмалар және жауаптар болуы керек.
         </div>
         <label for="aiAnswer" class="block text-sm font-semibold mb-1">2. ЖИ берген толық JSON жауабын осында қойыңыз</label>
@@ -601,7 +601,7 @@
 4. Мұғалім мен оқушы әрекеттері нақты, толық болсын. Оқушы тапсырмаларында нақты сұрақтар, тапсырма мәтіні, қажет болса жауап нұсқалары және күтілетін жауаптар болсын.
 5. Кемінде екі құрылымдалған көрнекілік бер: кесте, график, кезеңдік схема немесе сурет дайындауға арналған толық сипаттама. Құрылымдалған көрнекіліктер visuals массивінде болсын. Көрнекілік түрлері мен қажетті өрістері: table — title, columns массиві, rows массиві; graph — title, xLabel, yLabel және label/value бар data массиві; diagram — title және ретімен берілген steps массиві; image_description — title және толық description. Суретке жалған URL ойлап таппа. Ойдан жасалған деректер болса, оларды үлгі деректер деп белгіле.
 6. Сабаққа ЖИ-ді нақты кіріктір: құрал атауы, қолданылатын prompt, мұғалім/оқушы әрекеті, ЖИ жауабын тексеру әдісі және интернет/құрылғы болмағандағы балама.
-7. Негізгі дескриптор дәл 10 болсын: бірінші кезеңде 2, екінші кезеңде 6, үшінші кезеңде 2. Әр дескриптор бөлек элемент болсын, «Білім алушы ...» деп басталсын және тексерілетін әрекетті білдірсін. Әрқайсысы 1 балл. ЕБҚ дескрипторлары осы 10 балға қосылмасын.
+7. Негізгі дескриптор дәл 10 болсын: бірінші кезеңде 2, екінші кезеңде 6, үшінші кезеңде 2. Әр дескриптор нақты әрекетті білдірсін және мысалы, «Білім алушы жасуша бөліктерін атайды» сияқты толық сөйлем болсын. Дескриптордың орнына «Білім алушы ...» деп қалдырма. Әрқайсысы 1 балл. ЕБҚ дескрипторлары осы 10 балға қосылмасын.
 8. ${ebkInstruction}
 
 JSON ЖАУАБЫНЫҢ ҚҰРЫЛЫМЫ:
@@ -669,8 +669,18 @@ JSON ЖАУАБЫНЫҢ ҚҰРЫЛЫМЫ:
 
         document.getElementById('aiAnswer').addEventListener('input', () => setAnswerStatus('', 'info'));
 
+        // Шаблондарды анықтау: кәдімгі сөйлем ішіндегі көп нүктелерді қате деп санамау.
         function hasPlaceholder(value) {
-            if (typeof value === 'string') return /\.{3,}|…/.test(value);
+            if (typeof value === 'string') {
+                const t = value.trim();
+                if (!t) return false;
+                // Тек бос/нақты placeholder мәндерін қабылдамау.
+                if (/^(?:\.{3,}|…+|TODO|TBD|PLACEHOLDER|INSERT[_ ]HERE)$/i.test(t)) return true;
+                if (/^\{\{[^}]+\}\}$/.test(t)) return true;
+                // Жиі кездесетін шаблон сөйлемдер: "Білім алушы ...", "Мұғалім ...".
+                if (/^(?:Білім алушы|Оқушы|Мұғалім|Teacher|Student)\s*(?:\.{3,}|…+)$/i.test(t)) return true;
+                return false;
+            }
             if (Array.isArray(value)) return value.some(hasPlaceholder);
             if (value && typeof value === 'object') return Object.values(value).some(hasPlaceholder);
             return false;
@@ -695,8 +705,8 @@ JSON ЖАУАБЫНЫҢ ҚҰРЫЛЫМЫ:
                 if (counts[0] !== 2 || counts[1] !== 6 || counts[2] !== 2) throw new Error('Дескрипторлар саны 2 + 6 + 2 = 10 болуы керек. ЖИ жауабын толық көшіріңіз немесе ЖИ-ге дескрипторлар санын түзетуді сұраңыз.');
             } catch (e) {
                 const msg = String(e.message || 'Белгісіз қате.');
-                if ((/JSON құрылымы|JSON structure/i.test(rawAnswer) && /\.{3,}|…|\[\s*\.{3,}\s*\]/.test(rawAnswer)) || /Сіз дайын сабақтың орнына үлгі құрылымды/.test(msg)) {
-                    setAnswerStatus('Сіз ҚМЖ-ның үлгісін ғана көшірген сияқтысыз. «Промптты көшіру» батырмасын басыңыз, оны ChatGPT немесе Gemini-ге жіберіңіз. ЖИ толық сабақ жоспарын жасап болған соң, ДАЙЫН ЖАУАПТЫ осы өріске көшіріңіз. Үлгінің ішінде «...» белгілері болса, ол ҚМЖ емес.', 'error');
+                if ((/JSON құрылымы|JSON structure/i.test(rawAnswer) && /(?:"(?:teacher|student|resources|lessonGoal)"\s*:\s*"(?:\.{3,}|…+)"|\bTODO\b|\bPLACEHOLDER\b)/i.test(rawAnswer)) || /Сіз дайын сабақтың орнына үлгі құрылымды/.test(msg)) {
+                    setAnswerStatus('Сіз бос JSON үлгісін көшірген сияқтысыз. Промптты ChatGPT немесе Gemini-ге жіберіңіз, содан кейін толық жасалған ҚМЖ жауабын көшіріңіз. Егер бұл нақты жауап болса, «ҚМЖ құру» батырмасын қайта басып көріңіз.', 'error');
                 } else if (/JSON|Unexpected|position|property|token|күтілмеді|жарамды/i.test(msg) && /құрылым|табылмады|Unexpected|token|property|position/i.test(msg)) {
                     setAnswerStatus('Жауап JSON пішімінде дұрыс емес. ChatGPT/Gemini-ге: «Жауапты толық жарамды JSON етіп қайта бер, Markdown және түсіндірме қоспа» деп жазыңыз. Толық жауапты қайта көшіріңіз. Техникалық мәлімет: ' + msg, 'error');
                 } else {
