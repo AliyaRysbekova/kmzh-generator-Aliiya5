@@ -203,8 +203,13 @@
         <label for="aiPrompt" class="block text-sm font-semibold mb-1">1. Промпт</label>
         <textarea id="aiPrompt" readonly rows="8" class="w-full text-xs p-3 border rounded-lg mb-2 bg-slate-50"></textarea>
         <button type="button" id="copyBtn" onclick="copyTrialPrompt()" class="mb-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Промптты көшіру</button>
+        <div class="rounded-lg border border-amber-300 bg-amber-50 text-amber-950 p-3 mb-3 text-sm">
+          <strong>Маңызды:</strong> жоғарыдағы промптты ChatGPT немесе Gemini-ге жіберіңіз. ЖИ нақты сабақ жоспарын жасағаннан кейін, <strong>ЖИ-дің дайын жауабын</strong> көшіріп қойыңыз.
+          <br>«JSON құрылымы», үлгі код немесе ішінде <code>...</code> тұрған шаблонды қоймаңыз — оның орнына нақты мұғалім әрекеттері, тапсырмалар және жауаптар болуы керек.
+        </div>
         <label for="aiAnswer" class="block text-sm font-semibold mb-1">2. ЖИ берген толық JSON жауабын осында қойыңыз</label>
-        <textarea id="aiAnswer" rows="8" placeholder='Жауапты бірінші { таңбасынан соңғы } таңбасына дейін қойыңыз...' class="w-full text-xs p-3 border rounded-lg mb-3"></textarea>
+        <textarea id="aiAnswer" rows="8" placeholder='ChatGPT/Gemini берген дайын жауапты толық қойыңыз. Ол { таңбасынан басталып, } таңбасымен аяқталуы керек...' class="w-full text-xs p-3 border rounded-lg mb-2"></textarea>
+        <div id="answerStatus" class="hidden rounded-lg border p-3 text-sm mb-3" role="alert" aria-live="polite"></div>
         <div class="flex flex-wrap justify-end gap-2">
           <button type="button" onclick="closeManualAi()" class="text-sm px-4 py-2 rounded-lg border">Жабу</button>
           <button type="button" onclick="buildFromTrialAnswer()" class="text-sm font-semibold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">ҚМЖ құру</button>
@@ -584,7 +589,7 @@
             const ebkInstruction = p.ebkEnabled
                 ? `ЕБҚ РЕЖИМІ ҚОСУЛЫ. Таңдалған қолдау түрлері: ${p.ebkNeeds.join(', ') || 'мұғалім жеке таңдайды'}. Қосымша өтініш: ${p.ebkOther || 'жоқ'}.\nЕБҚ қолдауын үш кезеңде нақты көрсет: бейімделген тапсырма, қадамдық нұсқаулық, көрнекі тірек, ресурстар және ЕБҚ-ға арналған жеке дескрипторлар. Оқу мақсатын өзгертпе және диагнозды болжама.`
                 : `ЕБҚ РЕЖИМІ ӨШІРУЛІ. Арнайы ЕБҚ тапсырмаларын қоспа; ebk.support және ebk.task өрістеріне «ЕБҚ режимі қосылмаған» деп жаз.`;
-            return `Сен Қазақстанның жаңартылған білім беру мазмұны бойынша методист-экспертсің. ҚМЖ-ны ҚАЗАҚ ТІЛІНДЕ құрастыр.\nПән: ${p.subject}. Сынып: ${p.grade}. Бөлім: ${p.unit}. Сабақ тақырыбы: ${p.topic}. Оқу мақсаты: ${p.objective}.\n\nТАЛАПТАР:\n1) lessonGoal — оқу мақсатынан шығатын нақты сабақ мақсаты; values — 2–3 құндылық пен олардың сабақтағы көрінісі.\n2) Сабақ ұзақтығы 45 минут: басы 0–7, ортасы 7–32, соңы 32–45. Дәл үш кезең болсын.\n3) Әр әдістің алдында міндетті түрде жұмыс түрін көрсет: «Жұмыс түрі: Жеке жұмыс/Жұптық жұмыс/Топтық жұмыс». Одан кейін әдіс атауы және орындау қадамдары.\n4) Оқушы әрекетінде толық тапсырмалар, нақты сұрақтар және күтілетін жауаптар болсын. Мұғалім мен оқушы әрекеттері нақты жазылсын.\n5) Кемінде екі көрнекілікті құрылымдалған түрде жаса: кесте, график, кезеңдік схема немесе сурет сипаттамасы. Оларды visuals массиві ретінде көрсет. Кесте нысаны: {"type":"table","title":"...","columns":["...","..."],"rows":[["...","..."],["...","..."]]}. График нысаны: {"type":"graph","title":"...","xLabel":"...","yLabel":"...","data":[{"label":"...","value":1},{"label":"...","value":2}]}. Схема нысаны: {"type":"diagram","title":"...","steps":["1-қадам","2-қадам","3-қадам"]}. Сурет сипаттамасы: {"type":"image_description","title":"...","description":"Мұғалімге суретті қалай дайындау керегі нақты сипатталсын"}. Нақты дерек жоқ кезде ойдан ғылыми дерек жасама; оқу мазмұнына сай үлгі деректер екенін көрсет. Жалған URL берме.\n6) Сабақта ЖИ қолдану тәсілі болсын: құрал атауы, нақты prompt, оқушы/мұғалім әрекеті, жауапты тексеру және интернет болмаса балама.\n7) Дескрипторлардың жалпы саны дәл 10: басы — 2, ортасы — 6, соңы — 2. Әрқайсысы бөлек жолда, «Білім алушы ...» деп басталсын және тексерілетін әрекетті көрсетсін. Әр дескриптор — 1 балл. ЕБҚ дескрипторлары бөлек есептеледі.\n8) ${ebkInstruction}\n9) Тек жарамды JSON қайтар. Markdown қоршауын, алғы сөзді және түсіндірмені қоспа.\n\nJSON құрылымы: {"lessonGoal":"...","values":"...","stages":[{"stage":"Сабақтың басы (0–7 мин)","teacher":"...","student":"...","descriptors":["Білім алушы ...","Білім алушы ..."],"visuals":[{"type":"diagram","title":"...","steps":["...","..."]}],"ebk":{"support":"...","task":"...","descriptors":["..."]},"resources":"..."},{"stage":"Сабақтың ортасы (7–32 мин)","teacher":"...","student":"...","descriptors":["Білім алушы ...","Білім алушы ...","Білім алушы ...","Білім алушы ...","Білім алушы ...","Білім алушы ..."],"visuals":[{"type":"table","title":"...","columns":["...","..."],"rows":[["...","..."]]},{"type":"graph","title":"...","xLabel":"...","yLabel":"...","data":[{"label":"...","value":1},{"label":"...","value":2}]}],"ebk":{"support":"...","task":"...","descriptors":["..."]},"resources":"..."},{"stage":"Сабақтың соңы (32–45 мин)","teacher":"...","student":"...","descriptors":["Білім алушы ...","Білім алушы ..."],"visuals":[],"ebk":{"support":"...","task":"...","descriptors":["..."]},"resources":"...","reflection":"..."}]}`;
+            return `Сен Қазақстанның жаңартылған білім беру мазмұны бойынша методист-экспертсің. ҚМЖ-ны ҚАЗАҚ ТІЛІНДЕ құрастыр.\nПән: ${p.subject}. Сынып: ${p.grade}. Бөлім: ${p.unit}. Сабақ тақырыбы: ${p.topic}. Оқу мақсаты: ${p.objective}.\n\nТАЛАПТАР:\n1) lessonGoal — оқу мақсатынан шығатын нақты сабақ мақсаты; values — 2–3 құндылық пен олардың сабақтағы көрінісі.\n2) Сабақ ұзақтығы 45 минут: басы 0–7, ортасы 7–32, соңы 32–45. Дәл үш кезең болсын.\n3) Әр әдістің алдында міндетті түрде жұмыс түрін көрсет: «Жұмыс түрі: Жеке жұмыс/Жұптық жұмыс/Топтық жұмыс». Одан кейін әдіс атауы және орындау қадамдары.\n4) Оқушы әрекетінде толық тапсырмалар, нақты сұрақтар және күтілетін жауаптар болсын. Мұғалім мен оқушы әрекеттері нақты жазылсын.\n5) Кемінде екі көрнекілікті құрылымдалған түрде жаса: кесте, график, кезеңдік схема немесе сурет сипаттамасы. Оларды visuals массиві ретінде көрсет. Кесте нысаны: {"type":"table","title":"...","columns":["...","..."],"rows":[["...","..."],["...","..."]]}. График нысаны: {"type":"graph","title":"...","xLabel":"...","yLabel":"...","data":[{"label":"...","value":1},{"label":"...","value":2}]}. Схема нысаны: {"type":"diagram","title":"...","steps":["1-қадам","2-қадам","3-қадам"]}. Сурет сипаттамасы: {"type":"image_description","title":"...","description":"Мұғалімге суретті қалай дайындау керегі нақты сипатталсын"}. Нақты дерек жоқ кезде ойдан ғылыми дерек жасама; оқу мазмұнына сай үлгі деректер екенін көрсет. Жалған URL берме.\n6) Сабақта ЖИ қолдану тәсілі болсын: құрал атауы, нақты prompt, оқушы/мұғалім әрекеті, жауапты тексеру және интернет болмаса балама.\n7) Дескрипторлардың жалпы саны дәл 10: басы — 2, ортасы — 6, соңы — 2. Әрқайсысы бөлек жолда, «Білім алушы ...» деп басталсын және тексерілетін әрекетті көрсетсін. Әр дескриптор — 1 балл. ЕБҚ дескрипторлары бөлек есептеледі.\n8) ${ebkInstruction}\n9) Тек жарамды JSON қайтар. Markdown қоршауын, алғы сөзді және түсіндірмені қоспа.\n10) МІНДЕТТІ: бұл тапсырма үшін дайын ҚМЖ құрастыр. Үлгі құрылымды немесе «JSON құрылымы:» деген мәтінді жауап ретінде қайтарма. Еш жерде «...», «…», «[ ... ]» сияқты орынбасарлар қалмасын. teacher, student, lessonGoal, values, resources және барлық дескрипторлардың орны нақты мазмұнмен толтырылсын. Жауапты сайтқа бірден қоюға болатындай толық JSON түрінде бер.\n\nJSON құрылымы (тек формат бағдар үшін, мәндерін нақты мазмұнмен толтыр): {"lessonGoal":"...","values":"...","stages":[{"stage":"Сабақтың басы (0–7 мин)","teacher":"...","student":"...","descriptors":["Білім алушы ...","Білім алушы ..."],"visuals":[{"type":"diagram","title":"...","steps":["...","..."]}],"ebk":{"support":"...","task":"...","descriptors":["..."]},"resources":"..."},{"stage":"Сабақтың ортасы (7–32 мин)","teacher":"...","student":"...","descriptors":["Білім алушы ...","Білім алушы ...","Білім алушы ...","Білім алушы ...","Білім алушы ...","Білім алушы ..."],"visuals":[{"type":"table","title":"...","columns":["...","..."],"rows":[["...","..."]]},{"type":"graph","title":"...","xLabel":"...","yLabel":"...","data":[{"label":"...","value":1},{"label":"...","value":2}]}],"ebk":{"support":"...","task":"...","descriptors":["..."]},"resources":"..."},{"stage":"Сабақтың соңы (32–45 мин)","teacher":"...","student":"...","descriptors":["Білім алушы ...","Білім алушы ..."],"visuals":[],"ebk":{"support":"...","task":"...","descriptors":["..."]},"resources":"...","reflection":"..."}]}`;
         }
 
         async function copyTrialPrompt() {
@@ -617,17 +622,61 @@
             }
         }
 
-        function buildFromTrialAnswer() {
-            let d;
-            try {
-                d = parseTrialJson(document.getElementById('aiAnswer').value);
-                if (!d || !Array.isArray(d.stages) || d.stages.length !== 3) throw new Error('ҚМЖ үш кезеңнен тұруы керек.');
-                const counts = d.stages.map(s => Array.isArray(s.descriptors) ? s.descriptors.length : 0);
-                if (counts[0] !== 2 || counts[1] !== 6 || counts[2] !== 2) throw new Error('Дескрипторлар саны 2 + 6 + 2 = 10 болуы керек. ЖИ жауабын түзетіп қайта қойыңыз.');
-            } catch (e) {
-                setStatus('ЖИ жауабын оқу мүмкін болмады: ' + e.message, 'error');
+        function setAnswerStatus(message, type = 'error') {
+            const el = document.getElementById('answerStatus');
+            if (!message) {
+                el.className = 'hidden rounded-lg border p-3 text-sm mb-3';
+                el.textContent = '';
                 return;
             }
+            const styles = {
+                error: 'border-red-300 bg-red-50 text-red-800',
+                info: 'border-blue-300 bg-blue-50 text-blue-800',
+                success: 'border-emerald-300 bg-emerald-50 text-emerald-800'
+            };
+            el.className = `rounded-lg border p-3 text-sm mb-3 ${styles[type] || styles.error}`;
+            el.textContent = message;
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        document.getElementById('aiAnswer').addEventListener('input', () => setAnswerStatus('', 'info'));
+
+        function hasPlaceholder(value) {
+            if (typeof value === 'string') return /\.{3,}|…/.test(value);
+            if (Array.isArray(value)) return value.some(hasPlaceholder);
+            if (value && typeof value === 'object') return Object.values(value).some(hasPlaceholder);
+            return false;
+        }
+
+        function buildFromTrialAnswer() {
+            let d;
+            const rawAnswer = document.getElementById('aiAnswer').value.trim();
+            if (!rawAnswer) {
+                setAnswerStatus('Алдымен ChatGPT немесе Gemini берген дайын ҚМЖ жауабын осы өріске қойыңыз.', 'error');
+                return;
+            }
+            try {
+                d = parseTrialJson(rawAnswer);
+                if (!d || !Array.isArray(d.stages) || d.stages.length !== 3) throw new Error('ҚМЖ үш кезеңнен тұруы керек.');
+                if (hasPlaceholder(d)) throw new Error('Сіз дайын сабақтың орнына үлгі құрылымды көшірген сияқтысыз. ЖИ-ге промптты жіберіп, нақты жасалған жауапты көшіріңіз. Жауапта «...», «…» немесе бос орынбасарлар болмауы керек.');
+                const requiredKeys = ['teacher', 'student', 'resources'];
+                if (d.stages.some(stage => !stage || requiredKeys.some(key => !String(stage[key] ?? '').trim()))) {
+                    throw new Error('Әр кезеңде teacher, student және resources бөлімдері нақты толтырылуы керек. ChatGPT/Gemini-ден толық ҚМЖ сұраңыз.');
+                }
+                const counts = d.stages.map(s => Array.isArray(s.descriptors) ? s.descriptors.length : 0);
+                if (counts[0] !== 2 || counts[1] !== 6 || counts[2] !== 2) throw new Error('Дескрипторлар саны 2 + 6 + 2 = 10 болуы керек. ЖИ жауабын толық көшіріңіз немесе ЖИ-ге дескрипторлар санын түзетуді сұраңыз.');
+            } catch (e) {
+                const msg = String(e.message || 'Белгісіз қате.');
+                if ((/JSON құрылымы|JSON structure/i.test(rawAnswer) && /\.{3,}|…|\[\s*\.{3,}\s*\]/.test(rawAnswer)) || /Сіз дайын сабақтың орнына үлгі құрылымды/.test(msg)) {
+                    setAnswerStatus('Сіз ҚМЖ-ның үлгісін ғана көшірген сияқтысыз. «Промптты көшіру» батырмасын басыңыз, оны ChatGPT немесе Gemini-ге жіберіңіз. ЖИ толық сабақ жоспарын жасап болған соң, ДАЙЫН ЖАУАПТЫ осы өріске көшіріңіз. Үлгінің ішінде «...» белгілері болса, ол ҚМЖ емес.', 'error');
+                } else if (/JSON|Unexpected|position|property|token|күтілмеді|жарамды/i.test(msg) && /құрылым|табылмады|Unexpected|token|property|position/i.test(msg)) {
+                    setAnswerStatus('Жауап JSON пішімінде дұрыс емес. ChatGPT/Gemini-ге: «Жауапты толық жарамды JSON етіп қайта бер, Markdown және түсіндірме қоспа» деп жазыңыз. Толық жауапты қайта көшіріңіз. Техникалық мәлімет: ' + msg, 'error');
+                } else {
+                    setAnswerStatus(msg, 'error');
+                }
+                return;
+            }
+            setAnswerStatus('', 'info');
             const p = currentTrialParams;
             if (!p) { setStatus('Форма деректері жоғалды. Қайталап бастаңыз.', 'error'); return; }
             document.getElementById('outTopic').innerText = p.topic;
@@ -637,6 +686,7 @@
             document.getElementById('outObjective').innerText = p.objective;
             try {
                 render(d);
+                setAnswerStatus('', 'info');
                 closeManualAi();
                 setStatus('ҚМЖ дайын! Сынақ режимі арқылы жасалды. Кестені өңдеп, Word немесе PDF түрінде сақтаңыз.', 'success');
                 document.getElementById('kmzhContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
