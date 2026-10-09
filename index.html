@@ -186,6 +186,32 @@
         </section>
     </main>
 
+    <!-- Temporary manual AI flow for GitHub Pages testing (no backend required) -->
+    <div id="aiModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 no-print">
+      <div class="bg-white rounded-2xl p-5 w-full max-w-3xl max-h-[92vh] overflow-y-auto shadow-2xl">
+        <div class="flex items-start justify-between gap-3 mb-2">
+          <div>
+            <h3 class="font-bold text-lg">ҚМЖ жасау — сынақ режимі</h3>
+            <p class="text-sm text-slate-600 mt-1">GitHub нұсқасында сервер әзірге қосылмаған. Төмендегі промптты көшіріп, ЖИ-ге жіберіңіз, содан кейін JSON жауабын осында қойыңыз.</p>
+          </div>
+          <button type="button" onclick="closeManualAi()" class="rounded-lg border px-3 py-1 text-slate-600" aria-label="Жабу">✕</button>
+        </div>
+        <div class="flex flex-wrap gap-2 mb-3 text-sm">
+          <a class="text-indigo-700 underline" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">ChatGPT ашу</a>
+          <a class="text-indigo-700 underline" href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer">Gemini ашу</a>
+        </div>
+        <label for="aiPrompt" class="block text-sm font-semibold mb-1">1. Промпт</label>
+        <textarea id="aiPrompt" readonly rows="8" class="w-full text-xs p-3 border rounded-lg mb-2 bg-slate-50"></textarea>
+        <button type="button" id="copyBtn" onclick="copyTrialPrompt()" class="mb-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg">Промптты көшіру</button>
+        <label for="aiAnswer" class="block text-sm font-semibold mb-1">2. ЖИ берген толық JSON жауабын осында қойыңыз</label>
+        <textarea id="aiAnswer" rows="8" placeholder='Жауапты бірінші { таңбасынан соңғы } таңбасына дейін қойыңыз...' class="w-full text-xs p-3 border rounded-lg mb-3"></textarea>
+        <div class="flex flex-wrap justify-end gap-2">
+          <button type="button" onclick="closeManualAi()" class="text-sm px-4 py-2 rounded-lg border">Жабу</button>
+          <button type="button" onclick="buildFromTrialAnswer()" class="text-sm font-semibold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">ҚМЖ құру</button>
+        </div>
+      </div>
+    </div>
+
  <script>
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const nl = s => esc(s).replace(/\n/g, '<br>');
@@ -203,6 +229,8 @@
             document.getElementById('outTopic').innerText = 'Сабақ тақырыбы көрсетілмеген';
             document.getElementById('kmzhTableBody').innerHTML = EMPTY_ROW;
             setStatus('', '');
+            document.getElementById('aiModal').classList.add('hidden');
+            currentTrialParams = null;
             turnstileToken = '';
             if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
         }
@@ -488,7 +516,13 @@
                 return;
             }
             if (!API_ENDPOINT || API_ENDPOINT.includes('PASTE_')) {
-                setStatus('Сайт серверге әлі қосылмаған. Орнату нұсқаулығындағы API_ENDPOINT мәнін Cloudflare Worker адресімен ауыстыру керек.', 'error');
+                // Trial mode: works from GitHub Pages without a backend by using external AI manually.
+                currentTrialParams = p;
+                document.getElementById('aiPrompt').value = buildTrialPrompt(p);
+                document.getElementById('aiAnswer').value = '';
+                document.getElementById('copyBtn').textContent = 'Промптты көшіру';
+                document.getElementById('aiModal').classList.remove('hidden');
+                setStatus('Сынақ режимі: ҚМЖ жасау үшін промптты ChatGPT немесе Gemini-ге жіберіңіз. Сервер орнатудың қажеті жоқ.', 'info');
                 return;
             }
             if (!TURNSTILE_SITE_KEY || TURNSTILE_SITE_KEY.includes('PASTE_')) {
@@ -535,6 +569,79 @@
                 setLoading(false);
                 turnstileToken = '';
                 if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
+            }
+        }
+
+
+        // ===== GitHub Pages сынақ режимі: промптты қолмен жіберу =====
+        let currentTrialParams = null;
+
+        function closeManualAi() {
+            document.getElementById('aiModal').classList.add('hidden');
+        }
+
+        function buildTrialPrompt(p) {
+            const ebkInstruction = p.ebkEnabled
+                ? `ЕБҚ РЕЖИМІ ҚОСУЛЫ. Таңдалған қолдау түрлері: ${p.ebkNeeds.join(', ') || 'мұғалім жеке таңдайды'}. Қосымша өтініш: ${p.ebkOther || 'жоқ'}.\nЕБҚ қолдауын үш кезеңде нақты көрсет: бейімделген тапсырма, қадамдық нұсқаулық, көрнекі тірек, ресурстар және ЕБҚ-ға арналған жеке дескрипторлар. Оқу мақсатын өзгертпе және диагнозды болжама.`
+                : `ЕБҚ РЕЖИМІ ӨШІРУЛІ. Арнайы ЕБҚ тапсырмаларын қоспа; ebk.support және ebk.task өрістеріне «ЕБҚ режимі қосылмаған» деп жаз.`;
+            return `Сен Қазақстанның жаңартылған білім беру мазмұны бойынша методист-экспертсің. ҚМЖ-ны ҚАЗАҚ ТІЛІНДЕ құрастыр.\nПән: ${p.subject}. Сынып: ${p.grade}. Бөлім: ${p.unit}. Сабақ тақырыбы: ${p.topic}. Оқу мақсаты: ${p.objective}.\n\nТАЛАПТАР:\n1) lessonGoal — оқу мақсатынан шығатын нақты сабақ мақсаты; values — 2–3 құндылық пен олардың сабақтағы көрінісі.\n2) Сабақ ұзақтығы 45 минут: басы 0–7, ортасы 7–32, соңы 32–45. Дәл үш кезең болсын.\n3) Әр әдістің алдында міндетті түрде жұмыс түрін көрсет: «Жұмыс түрі: Жеке жұмыс/Жұптық жұмыс/Топтық жұмыс». Одан кейін әдіс атауы және орындау қадамдары.\n4) Оқушы әрекетінде толық тапсырмалар, нақты сұрақтар және күтілетін жауаптар болсын. Мұғалім мен оқушы әрекеттері нақты жазылсын.\n5) Кемінде екі көрнекілікті құрылымдалған түрде жаса: кесте, график, кезеңдік схема немесе сурет сипаттамасы. Оларды visuals массиві ретінде көрсет. Кесте нысаны: {"type":"table","title":"...","columns":["...","..."],"rows":[["...","..."],["...","..."]]}. График нысаны: {"type":"graph","title":"...","xLabel":"...","yLabel":"...","data":[{"label":"...","value":1},{"label":"...","value":2}]}. Схема нысаны: {"type":"diagram","title":"...","steps":["1-қадам","2-қадам","3-қадам"]}. Сурет сипаттамасы: {"type":"image_description","title":"...","description":"Мұғалімге суретті қалай дайындау керегі нақты сипатталсын"}. Нақты дерек жоқ кезде ойдан ғылыми дерек жасама; оқу мазмұнына сай үлгі деректер екенін көрсет. Жалған URL берме.\n6) Сабақта ЖИ қолдану тәсілі болсын: құрал атауы, нақты prompt, оқушы/мұғалім әрекеті, жауапты тексеру және интернет болмаса балама.\n7) Дескрипторлардың жалпы саны дәл 10: басы — 2, ортасы — 6, соңы — 2. Әрқайсысы бөлек жолда, «Білім алушы ...» деп басталсын және тексерілетін әрекетті көрсетсін. Әр дескриптор — 1 балл. ЕБҚ дескрипторлары бөлек есептеледі.\n8) ${ebkInstruction}\n9) Тек жарамды JSON қайтар. Markdown қоршауын, алғы сөзді және түсіндірмені қоспа.\n\nJSON құрылымы: {"lessonGoal":"...","values":"...","stages":[{"stage":"Сабақтың басы (0–7 мин)","teacher":"...","student":"...","descriptors":["Білім алушы ...","Білім алушы ..."],"visuals":[{"type":"diagram","title":"...","steps":["...","..."]}],"ebk":{"support":"...","task":"...","descriptors":["..."]},"resources":"..."},{"stage":"Сабақтың ортасы (7–32 мин)","teacher":"...","student":"...","descriptors":["Білім алушы ...","Білім алушы ...","Білім алушы ...","Білім алушы ...","Білім алушы ...","Білім алушы ..."],"visuals":[{"type":"table","title":"...","columns":["...","..."],"rows":[["...","..."]]},{"type":"graph","title":"...","xLabel":"...","yLabel":"...","data":[{"label":"...","value":1},{"label":"...","value":2}]}],"ebk":{"support":"...","task":"...","descriptors":["..."]},"resources":"..."},{"stage":"Сабақтың соңы (32–45 мин)","teacher":"...","student":"...","descriptors":["Білім алушы ...","Білім алушы ..."],"visuals":[],"ebk":{"support":"...","task":"...","descriptors":["..."]},"resources":"...","reflection":"..."}]}`;
+        }
+
+        async function copyTrialPrompt() {
+            const t = document.getElementById('aiPrompt');
+            try {
+                await navigator.clipboard.writeText(t.value);
+            } catch (e) {
+                t.focus(); t.select(); document.execCommand('copy');
+            }
+            document.getElementById('copyBtn').textContent = 'Көшірілді ✓';
+        }
+
+        function parseTrialJson(text) {
+            let raw = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+            const first = raw.indexOf('{'), last = raw.lastIndexOf('}');
+            if (first < 0 || last < first) throw new Error('JSON табылмады. ЖИ жауабын толық көшіріңіз.');
+            raw = raw.slice(first, last + 1);
+            try { return JSON.parse(raw); } catch (e) {
+                // Common model mistake: raw line breaks inside JSON string values.
+                let fixed = '', inString = false;
+                for (let i = 0; i < raw.length; i++) {
+                    const ch = raw[i];
+                    if (ch === '\\' && inString) { fixed += ch + (raw[++i] || ''); continue; }
+                    if (ch === '"') { inString = !inString; fixed += ch; continue; }
+                    if (inString && ch === '\n') fixed += '\\n';
+                    else if (inString && ch === '\r') {}
+                    else fixed += ch;
+                }
+                return JSON.parse(fixed.replace(/,\s*([}\]])/g, '$1'));
+            }
+        }
+
+        function buildFromTrialAnswer() {
+            let d;
+            try {
+                d = parseTrialJson(document.getElementById('aiAnswer').value);
+                if (!d || !Array.isArray(d.stages) || d.stages.length !== 3) throw new Error('ҚМЖ үш кезеңнен тұруы керек.');
+                const counts = d.stages.map(s => Array.isArray(s.descriptors) ? s.descriptors.length : 0);
+                if (counts[0] !== 2 || counts[1] !== 6 || counts[2] !== 2) throw new Error('Дескрипторлар саны 2 + 6 + 2 = 10 болуы керек. ЖИ жауабын түзетіп қайта қойыңыз.');
+            } catch (e) {
+                setStatus('ЖИ жауабын оқу мүмкін болмады: ' + e.message, 'error');
+                return;
+            }
+            const p = currentTrialParams;
+            if (!p) { setStatus('Форма деректері жоғалды. Қайталап бастаңыз.', 'error'); return; }
+            document.getElementById('outTopic').innerText = p.topic;
+            document.getElementById('outSubject').innerText = p.subject;
+            document.getElementById('outGrade').innerText = p.grade + '-сынып';
+            document.getElementById('outUnit').innerText = p.unit;
+            document.getElementById('outObjective').innerText = p.objective;
+            try {
+                render(d);
+                closeManualAi();
+                setStatus('ҚМЖ дайын! Сынақ режимі арқылы жасалды. Кестені өңдеп, Word немесе PDF түрінде сақтаңыз.', 'success');
+                document.getElementById('kmzhContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (e) {
+                setStatus('ҚМЖ кестесін құру қатесі: ' + (e.message || 'белгісіз қате'), 'error');
             }
         }
 
