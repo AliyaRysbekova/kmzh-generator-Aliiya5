@@ -49,6 +49,7 @@
             <div id="authControls" class="flex items-center gap-2 shrink-0">
                 <span id="authUserLabel" class="hidden max-w-[190px] truncate text-xs text-indigo-100" aria-live="polite"></span>
                 <span id="generationBalance" class="hidden rounded-lg bg-indigo-600 border border-indigo-400 px-2 py-1.5 text-xs text-white whitespace-nowrap" aria-live="polite"></span>
+                <button id="buyPackagesBtn" type="button" onclick="openPackageModal()" class="hidden rounded-lg bg-yellow-300 hover:bg-yellow-200 text-indigo-950 font-bold text-xs sm:text-sm px-3 py-2 shadow-sm whitespace-nowrap"><i class="fa-solid fa-cart-shopping mr-1"></i>Пакет сатып алу</button>
                 <button id="openAuthBtn" type="button" onclick="openAuthModal('login')" class="rounded-lg bg-white text-indigo-700 hover:bg-indigo-50 font-semibold text-xs sm:text-sm px-3 py-2 shadow-sm">Кіру / Тіркелу</button>
                 <button id="logoutBtn" type="button" onclick="logoutUser()" class="hidden rounded-lg border border-indigo-300 text-white hover:bg-indigo-600 font-semibold text-xs sm:text-sm px-3 py-2">Шығу</button>
             </div>
@@ -222,6 +223,56 @@
         </section>
     </main>
 
+
+    <!-- Kaspi package purchase dialog (manual verification until merchant API integration is approved) -->
+    <div id="packageModal" class="hidden fixed inset-0 z-[110] bg-slate-950/60 flex items-center justify-center p-4 no-print" role="dialog" aria-modal="true" aria-labelledby="packageModalTitle">
+        <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 p-5 sm:p-6 relative max-h-[92vh] overflow-y-auto">
+            <button type="button" onclick="closePackageModal()" class="absolute right-4 top-4 w-9 h-9 rounded-full hover:bg-slate-100 text-slate-500" aria-label="Жабу"><i class="fa-solid fa-xmark"></i></button>
+            <div class="flex items-center gap-3 mb-3 pr-10">
+                <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center"><i class="fa-solid fa-wallet text-lg"></i></div>
+                <div>
+                    <h2 id="packageModalTitle" class="text-xl font-bold text-slate-800">ҚМЖ генерация пакетін таңдау</h2>
+                    <p class="text-xs text-slate-500">Kaspi Pay арқылы төлеу</p>
+                </div>
+            </div>
+            <p class="text-sm text-slate-600 mb-4">Пакетті таңдаңыз. Kaspi төлем бетінде соманы дәл енгізіп, хабарламаға аккаунтыңыздың электрондық поштасын және пакет көлемін жазыңыз.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="rounded-xl border border-slate-200 p-4 flex flex-col">
+                    <p class="text-sm font-semibold text-slate-700">50 ҚМЖ</p>
+                    <p class="text-2xl font-extrabold text-indigo-700 my-2">3 990 ₸</p>
+                    <p class="text-xs text-slate-500 mb-3">79,80 ₸ / ҚМЖ</p>
+                    <button type="button" onclick="startKaspiPayment(50)" class="mt-auto rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-3">Пакетті таңдау</button>
+                </div>
+                <div class="rounded-xl border border-indigo-300 bg-indigo-50/50 p-4 flex flex-col">
+                    <p class="text-sm font-semibold text-slate-700">100 ҚМЖ</p>
+                    <p class="text-2xl font-extrabold text-indigo-700 my-2">7 450 ₸</p>
+                    <p class="text-xs text-slate-500 mb-3">74,50 ₸ / ҚМЖ</p>
+                    <button type="button" onclick="startKaspiPayment(100)" class="mt-auto rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-3">Пакетті таңдау</button>
+                </div>
+                <div class="rounded-xl border border-slate-200 p-4 flex flex-col">
+                    <p class="text-sm font-semibold text-slate-700">200 ҚМЖ</p>
+                    <p class="text-2xl font-extrabold text-indigo-700 my-2">14 000 ₸</p>
+                    <p class="text-xs text-slate-500 mb-3">70 ₸ / ҚМЖ</p>
+                    <button type="button" onclick="startKaspiPayment(200)" class="mt-auto rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold py-2 px-3">Пакетті таңдау</button>
+                </div>
+            </div>
+            <div id="kaspiPaymentInstructions" class="hidden mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-live="polite">
+                <p id="kaspiChosenPackage" class="font-bold text-amber-950 mb-2"></p>
+                <ol class="list-decimal pl-5 text-sm text-amber-950 space-y-1">
+                    <li>Төлем бетінде көрсетілген пакет бағасын дәл енгізіңіз.</li>
+                    <li>Хабарлама/түсініктеме өрісіне төмендегі мәтінді енгізіңіз.</li>
+                    <li>Төлем аяқталған соң Kaspi Pay хабарламасын тексеруді күтіңіз.</li>
+                </ol>
+                <div class="mt-3 flex flex-col sm:flex-row gap-2">
+                    <input id="kaspiPaymentReference" readonly class="min-w-0 flex-1 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm" aria-label="Төлем түсініктемесі" />
+                    <button type="button" onclick="copyKaspiPaymentReference()" class="rounded-lg border border-amber-400 bg-white hover:bg-amber-100 px-3 py-2 text-sm font-semibold"><i class="fa-regular fa-copy mr-1"></i>Мәтінді көшіру</button>
+                </div>
+                <a id="kaspiPaymentLink" href="https://pay.kaspi.kz/pay/qcxjykr8" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-2.5"><i class="fa-solid fa-arrow-up-right-from-square mr-2"></i>Kaspi Pay бетіне өту</a>
+                <p class="mt-3 text-xs text-amber-900 leading-relaxed"><strong>Маңызды:</strong> бұл жалпы қашықтан төлеу сілтемесі. Төлем сайтқа автоматты түрде расталмайды және баланс бірден өзгермейді. Әкімші Kaspi Pay-де төлемді тексергеннен кейін ғана пакет қолмен есепке қосылады. Соманы немесе пакет туралы мәліметті қате көрсетсеңіз, пакет кешігіп қосылуы мүмкін.</p>
+            </div>
+            <p class="mt-4 text-xs text-slate-500">Төлем сілтемесі: <span class="font-mono">pay.kaspi.kz/pay/qcxjykr8</span>. Автоматты төлемді тексеру және пакет беру үшін Kaspi тарапынан арнайы интернет-төлем интеграциясы қосымша қажет.</p>
+        </div>
+    </div>
 
     <!-- Supabase authentication dialog -->
     <div id="authModal" class="hidden fixed inset-0 z-[100] bg-slate-950/60 flex items-center justify-center p-4 no-print" role="dialog" aria-modal="true" aria-labelledby="authTitle">
@@ -648,6 +699,7 @@
                 if (!response.ok) {
                     if (payload.limitReached) {
                         setStatus(payload.error || 'Тегін генерациялар аяқталды.', 'error');
+                        window.setTimeout(openPackageModal, 150);
                         return;
                     }
                     throw new Error(payload.error || `Сервер қатесі (${response.status}).`);
@@ -711,6 +763,66 @@
             saveAs(converted, `${topic}_ҚМЖ.docx`);
         }
 
+
+        // ===== Kaspi Pay package UI (manual payment confirmation) =====
+        const KASPI_REMOTE_PAYMENT_URL = 'https://pay.kaspi.kz/pay/qcxjykr8';
+        const KASPI_PACKAGES = {
+            50: { lessons: 50, price: 3990, formatted: '3 990 ₸' },
+            100: { lessons: 100, price: 7450, formatted: '7 450 ₸' },
+            200: { lessons: 200, price: 14000, formatted: '14 000 ₸' }
+        };
+        let selectedKaspiPackage = null;
+
+        function openPackageModal() {
+            if (!currentAuthUser) {
+                openAuthModal('login');
+                return;
+            }
+            document.getElementById('kaspiPaymentInstructions').classList.add('hidden');
+            document.getElementById('packageModal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closePackageModal() {
+            document.getElementById('packageModal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        function startKaspiPayment(lessonCount) {
+            const pkg = KASPI_PACKAGES[lessonCount];
+            if (!pkg) return;
+            if (!currentAuthUser || !currentAuthUser.email) {
+                setStatus('Пакетті сатып алу үшін аккаунтқа кіріңіз.', 'error');
+                closePackageModal();
+                openAuthModal('login');
+                return;
+            }
+            selectedKaspiPackage = pkg;
+            const reference = `QMJ Generator | ${pkg.lessons} ҚМЖ | ${currentAuthUser.email}`;
+            document.getElementById('kaspiChosenPackage').textContent = `${pkg.lessons} ҚМЖ пакеті — ${pkg.formatted}`;
+            document.getElementById('kaspiPaymentReference').value = reference;
+            document.getElementById('kaspiPaymentInstructions').classList.remove('hidden');
+            // The merchant's generic Kaspi remote-payment URL does not prefill amount or report a webhook.
+            // Open directly from the user click; package credit remains manual until an approved integration exists.
+            window.open(KASPI_REMOTE_PAYMENT_URL, '_blank', 'noopener,noreferrer');
+        }
+
+        async function copyKaspiPaymentReference() {
+            const input = document.getElementById('kaspiPaymentReference');
+            if (!input || !input.value) return;
+            try {
+                await navigator.clipboard.writeText(input.value);
+                const button = document.querySelector('#kaspiPaymentInstructions button[onclick="copyKaspiPaymentReference()"]');
+                if (button) {
+                    const old = button.innerHTML;
+                    button.innerHTML = '<i class="fa-solid fa-check mr-1"></i>Көшірілді';
+                    window.setTimeout(() => { button.innerHTML = old; }, 1800);
+                }
+            } catch (_) {
+                input.focus(); input.select();
+                setStatus('Төлем түсініктемесі белгіленді. Ctrl + C арқылы көшіріңіз.', 'info');
+            }
+        }
 
         // ===== Supabase Authentication =====
         // Бұл браузерде тек publishable key қолданылады. Secret/service_role кілттерін HTML-ге ЕШҚАШАН қоспаңыз.
@@ -801,16 +913,19 @@
             const openBtn = document.getElementById('openAuthBtn');
             const logoutBtn = document.getElementById('logoutBtn');
             const userLabel = document.getElementById('authUserLabel');
+            const buyPackagesBtn = document.getElementById('buyPackagesBtn');
             if (!openBtn || !logoutBtn || !userLabel) return;
             if (currentAuthUser) {
                 openBtn.classList.add('hidden');
                 logoutBtn.classList.remove('hidden');
+                if (buyPackagesBtn) buyPackagesBtn.classList.remove('hidden');
                 userLabel.classList.remove('hidden');
                 userLabel.textContent = currentAuthUser.email || 'Аккаунт';
                 userLabel.title = currentAuthUser.email || '';
             } else {
                 openBtn.classList.remove('hidden');
                 logoutBtn.classList.add('hidden');
+                if (buyPackagesBtn) buyPackagesBtn.classList.add('hidden');
                 userLabel.classList.add('hidden');
                 userLabel.textContent = '';
                 userLabel.title = '';
@@ -1008,7 +1123,10 @@
         }
 
         document.addEventListener('keydown', event => {
-            if (event.key === 'Escape') closeAuthModal();
+            if (event.key === 'Escape') { closeAuthModal(); closePackageModal(); }
+        });
+        document.getElementById('packageModal').addEventListener('click', event => {
+            if (event.target.id === 'packageModal') closePackageModal();
         });
         document.getElementById('authModal').addEventListener('click', event => {
             if (event.target.id === 'authModal') closeAuthModal();
