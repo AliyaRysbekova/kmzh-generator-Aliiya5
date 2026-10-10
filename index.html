@@ -475,7 +475,9 @@
                 const visualHtml = renderVisuals(visuals);
                 // Keep the schedule compact; full instructions and prompts go into appendices.
                 const studentShort = textOf(getField(s, ['studentSummary','student_summary','қысқашаТапсырма','taskSummary'])) || studentFull;
-                const teacherShort = textOf(getField(s, ['teacherSummary','teacher_summary','қысқашаМұғалімӘрекеті'])) || teacherFull;
+                // Keep the detailed teacher script visible in the main plan. Prefer the full field;
+                // teacherSummary is a fallback for older model responses only.
+                const teacherShort = teacherFull || textOf(getField(s, ['teacherSummary','teacher_summary','қысқашаМұғалімӘрекеті']));
                 const shortText = (txt, max=360) => txt.length > max ? txt.slice(0,max).trim() + '… (толық нұсқасы қосымшада)' : txt;
                 const visualsInCell = visualHtml ? `<div class="visuals-in-plan">${visualHtml}</div>` : '';
                 const reflectionPrompts = [
@@ -496,14 +498,14 @@
                 if (promptDetails || teacherPrompt) addAppendix(`${stageName}: ЖИ промпты`, promptDetails || teacherPrompt, stageName);
                 const teacherExplanation = textOf(getField(s, ['teacherExplanation','teacher_explanation','түсіндіруЖазбасы','мұғалімТүсіндірмесі']));
                 if (teacherExplanation) addAppendix(`${stageName}: мұғалімге арналған түсіндіру жазбасы`, teacherExplanation, stageName);
-                else if (teacherFull.length > 520) addAppendix(`${stageName}: мұғалімнің толық түсіндіруі`, teacherFull, stageName);
+                else if (teacherFull.length > 700) addAppendix(`${stageName}: мұғалімнің толық түсіндіруі`, teacherFull, stageName);
                 if (answerKey) addAppendix(`${stageName}: жауап кілті / күтілетін жауаптар`, answerKey, stageName);
                 if (resourcesFull.length > 150) addAppendix(`${stageName}: ресурстар мен материалдар`, resourcesFull, stageName);
                 const resourceShort = resourcesFull.length > 150 ? resourcesFull.slice(0,150).trim() + '… (толық тізім қосымшада)' : resourcesFull;
                 const c = (t, x='') => `<td class="p-2 align-top border-r ${x}" contenteditable="true">${nl(t || '')}</td>`;
                 const tr = document.createElement('tr'); tr.className='border-b';
                 tr.innerHTML = `<td class="p-2 align-top font-bold text-indigo-900 border-r bg-slate-50">${esc(stageName)}</td>` +
-                    c(shortText(teacherShort || '-',300)) +
+                    c(shortText(teacherShort || '-',700)) +
                     `<td class="p-2 align-top border-r task-content" contenteditable="true">${stu || '-'}</td>` +
                     `<td class="p-2 align-top border-r bg-amber-50/30" contenteditable="true">${ds || '-'}<div class="formative-assessment"><strong>Қалыптастырушы бағалау:</strong><div>${nl(formative || 'Мұғалім жауаптарды дескрипторлар бойынша тексеріп, дұрыс жауапты атап, қатені түзетуге қысқа кері байланыс береді.')}</div></div>${ebDescriptorsHtml}</td>` +
                     (ebkOn ? c(eb, 'ebk-col bg-emerald-50/30') : '') +
