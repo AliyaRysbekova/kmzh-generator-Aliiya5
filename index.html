@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ҚМЖ Генераторы V21 — автоматты Gemini API</title>
+    <title>ҚМЖ Генераторы — тіркелу және кіру</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS: public publishable key only; no secret/service_role key is placed in the browser. -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Cloudflare Turnstile: anti-bot check; configure site key below -->
@@ -36,13 +38,18 @@
 
     <!-- Header -->
     <header class="bg-indigo-700 text-white py-4 shadow-md no-print">
-        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
+        <div class="max-w-7xl mx-auto px-4 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center space-x-3 min-w-0">
                 <i class="fa-solid fa-file-pen text-2xl text-yellow-300"></i>
-                <div>
+                <div class="min-w-0">
                     <h1 class="text-xl font-bold">ҚМЖ Генераторы</h1>
                     <p class="text-xs text-indigo-200">Gemini арқылы автоматты генерация • көрнекілік • ЕБҚ қолдауы • ҚМЖ және қосымшалар</p>
                 </div>
+            </div>
+            <div id="authControls" class="flex items-center gap-2 shrink-0">
+                <span id="authUserLabel" class="hidden max-w-[190px] truncate text-xs text-indigo-100" aria-live="polite"></span>
+                <button id="openAuthBtn" type="button" onclick="openAuthModal('login')" class="rounded-lg bg-white text-indigo-700 hover:bg-indigo-50 font-semibold text-xs sm:text-sm px-3 py-2 shadow-sm">Кіру / Тіркелу</button>
+                <button id="logoutBtn" type="button" onclick="logoutUser()" class="hidden rounded-lg border border-indigo-300 text-white hover:bg-indigo-600 font-semibold text-xs sm:text-sm px-3 py-2">Шығу</button>
             </div>
         </div>
     </header>
@@ -213,6 +220,43 @@
             </div>
         </section>
     </main>
+
+
+    <!-- Supabase authentication dialog -->
+    <div id="authModal" class="hidden fixed inset-0 z-[100] bg-slate-950/60 flex items-center justify-center p-4 no-print" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+        <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 p-5 sm:p-6 relative max-h-[90vh] overflow-y-auto">
+            <button type="button" onclick="closeAuthModal()" class="absolute right-4 top-4 w-9 h-9 rounded-full hover:bg-slate-100 text-slate-500" aria-label="Жабу"><i class="fa-solid fa-xmark"></i></button>
+            <div class="flex items-center gap-3 mb-4 pr-10">
+                <div class="w-11 h-11 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center"><i class="fa-solid fa-user-lock text-lg"></i></div>
+                <div>
+                    <h2 id="authTitle" class="text-xl font-bold text-slate-800">Кіру</h2>
+                    <p id="authSubtitle" class="text-xs text-slate-500">ҚМЖ генераторына аккаунтыңыз арқылы кіріңіз.</p>
+                </div>
+            </div>
+            <div id="authTabs" class="grid grid-cols-2 gap-2 mb-4">
+                <button id="authLoginTab" type="button" onclick="switchAuthMode('login')" class="rounded-lg bg-indigo-600 text-white font-semibold text-sm py-2">Кіру</button>
+                <button id="authSignupTab" type="button" onclick="switchAuthMode('signup')" class="rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold text-sm py-2">Тіркелу</button>
+            </div>
+            <form id="authForm" class="space-y-3" novalidate>
+                <div id="authEmailWrap">
+                    <label for="authEmail" class="block text-sm font-semibold text-slate-700 mb-1">Электрондық пошта</label>
+                    <input id="authEmail" type="email" autocomplete="email" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="you@example.com" required>
+                </div>
+                <div id="authPasswordWrap">
+                    <label id="authPasswordLabel" for="authPassword" class="block text-sm font-semibold text-slate-700 mb-1">Құпиясөз</label>
+                    <input id="authPassword" type="password" autocomplete="current-password" minlength="8" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Кемінде 8 таңба" required>
+                </div>
+                <div id="authConfirmPasswordWrap" class="hidden">
+                    <label for="authConfirmPassword" class="block text-sm font-semibold text-slate-700 mb-1">Құпиясөзді қайталаңыз</label>
+                    <input id="authConfirmPassword" type="password" autocomplete="new-password" minlength="8" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Құпиясөзді қайталаңыз">
+                </div>
+                <div id="authStatus" class="hidden rounded-lg border px-3 py-2.5 text-sm" role="status" aria-live="polite"></div>
+                <button id="authSubmitBtn" type="submit" class="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold py-2.5">Кіру</button>
+                <button id="authResetBtn" type="button" onclick="sendPasswordReset()" class="w-full text-sm text-indigo-700 hover:underline">Құпиясөзді ұмыттыңыз ба?</button>
+                <p id="authFooterNote" class="text-xs text-slate-500 leading-relaxed">Тіркелген кезде электрондық поштаңызды растау үшін хат жіберіледі.</p>
+            </form>
+        </div>
+    </div>
 
  <script>
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -644,6 +688,261 @@
             const converted = htmlDocx.asBlob(htmlDocument, {orientation: "landscape"});
             saveAs(converted, `${topic}_ҚМЖ.docx`);
         }
+
+
+        // ===== Supabase Authentication =====
+        // Бұл браузерде тек publishable key қолданылады. Secret/service_role кілттерін HTML-ге ЕШҚАШАН қоспаңыз.
+        const SUPABASE_URL = 'https://ezprpaipscfgzhagdwkz.supabase.co';
+        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_lDJaLKMV0LZ3Q-C7S_7jMg_FoV0MKst';
+        let supabaseAuthClient = null;
+        let authMode = 'login';
+        let currentAuthUser = null;
+        let authFlowHandled = false;
+        const initialAuthFlowType = (() => {
+            try {
+                const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+                const query = new URLSearchParams(window.location.search);
+                return hash.get('type') || query.get('type') || '';
+            } catch (_) { return ''; }
+        })();
+
+        function setAuthStatus(message, kind = 'info') {
+            const el = document.getElementById('authStatus');
+            if (!el) return;
+            if (!message) {
+                el.className = 'hidden rounded-lg border px-3 py-2.5 text-sm';
+                el.textContent = '';
+                return;
+            }
+            const palette = {
+                info: 'border-blue-200 bg-blue-50 text-blue-800',
+                success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+                error: 'border-red-200 bg-red-50 text-red-800'
+            };
+            el.className = `rounded-lg border px-3 py-2.5 text-sm ${palette[kind] || palette.info}`;
+            el.textContent = message;
+        }
+
+        function renderAuthControls() {
+            const openBtn = document.getElementById('openAuthBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const userLabel = document.getElementById('authUserLabel');
+            if (!openBtn || !logoutBtn || !userLabel) return;
+            if (currentAuthUser) {
+                openBtn.classList.add('hidden');
+                logoutBtn.classList.remove('hidden');
+                userLabel.classList.remove('hidden');
+                userLabel.textContent = currentAuthUser.email || 'Аккаунт';
+                userLabel.title = currentAuthUser.email || '';
+            } else {
+                openBtn.classList.remove('hidden');
+                logoutBtn.classList.add('hidden');
+                userLabel.classList.add('hidden');
+                userLabel.textContent = '';
+                userLabel.title = '';
+            }
+        }
+
+        function updateAuthDialogLayout() {
+            const updatePasswordMode = authMode === 'updatePassword';
+            const signupMode = authMode === 'signup';
+            const loginMode = authMode === 'login';
+            document.getElementById('authTabs').classList.toggle('hidden', updatePasswordMode);
+            document.getElementById('authEmailWrap').classList.toggle('hidden', updatePasswordMode);
+            document.getElementById('authEmail').disabled = updatePasswordMode;
+            document.getElementById('authEmail').required = !updatePasswordMode;
+            document.getElementById('authPasswordLabel').textContent = updatePasswordMode ? 'Жаңа құпиясөз' : 'Құпиясөз';
+            document.getElementById('authPassword').autocomplete = updatePasswordMode || signupMode ? 'new-password' : 'current-password';
+            document.getElementById('authPassword').placeholder = updatePasswordMode ? 'Жаңа құпиясөз (кемінде 8 таңба)' : 'Кемінде 8 таңба';
+            document.getElementById('authPassword').minLength = 8;
+            document.getElementById('authConfirmPasswordWrap').classList.toggle('hidden', !(signupMode || updatePasswordMode));
+            document.getElementById('authConfirmPassword').required = signupMode || updatePasswordMode;
+            document.getElementById('authConfirmPassword').disabled = !(signupMode || updatePasswordMode);
+            document.getElementById('authResetBtn').classList.toggle('hidden', !loginMode);
+            document.getElementById('authLoginTab').className = `rounded-lg font-semibold text-sm py-2 ${loginMode ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
+            document.getElementById('authSignupTab').className = `rounded-lg font-semibold text-sm py-2 ${signupMode ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
+            document.getElementById('authTitle').textContent = updatePasswordMode ? 'Құпиясөз орнату' : (signupMode ? 'Тіркелу' : 'Кіру');
+            document.getElementById('authSubtitle').textContent = updatePasswordMode
+                ? 'Аккаунтты аяқтау үшін жаңа құпиясөз орнатыңыз.'
+                : (signupMode ? 'Электрондық пошта арқылы жаңа аккаунт жасаңыз.' : 'ҚМЖ генераторына аккаунтыңыз арқылы кіріңіз.');
+            document.getElementById('authSubmitBtn').textContent = updatePasswordMode ? 'Құпиясөзді сақтау' : (signupMode ? 'Тіркелу' : 'Кіру');
+            document.getElementById('authFooterNote').textContent = updatePasswordMode
+                ? 'Құпиясөз кемінде 8 таңбадан тұруы керек.'
+                : (signupMode ? 'Тіркелгеннен кейін электрондық поштаңызды растау туралы хат келеді.' : 'Аккаунтыңыз жоқ па? «Тіркелу» батырмасын таңдаңыз.');
+        }
+
+        function openAuthModal(mode = 'login') {
+            authMode = mode;
+            updateAuthDialogLayout();
+            setAuthStatus('', 'info');
+            document.getElementById('authModal').classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            window.setTimeout(() => {
+                const field = authMode === 'updatePassword' ? document.getElementById('authPassword') : document.getElementById('authEmail');
+                if (field && !field.disabled) field.focus();
+            }, 30);
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        function switchAuthMode(mode) {
+            if (mode !== 'login' && mode !== 'signup') return;
+            authMode = mode;
+            document.getElementById('authPassword').value = '';
+            document.getElementById('authConfirmPassword').value = '';
+            updateAuthDialogLayout();
+            setAuthStatus('', 'info');
+        }
+
+        function getAuthRedirectUrl() {
+            // Uses the current public site, so local preview or a future custom domain doesn't require hardcoding here.
+            return window.location.origin + window.location.pathname;
+        }
+
+        async function handleAuthSubmit(event) {
+            event.preventDefault();
+            if (!supabaseAuthClient) {
+                setAuthStatus('Supabase клиенті жүктелмеді. Бетті жаңартып көріңіз.', 'error');
+                return;
+            }
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value;
+            const confirmPassword = document.getElementById('authConfirmPassword').value;
+            const submit = document.getElementById('authSubmitBtn');
+            if (password.length < 8) {
+                setAuthStatus('Құпиясөз кемінде 8 таңбадан тұруы керек.', 'error');
+                return;
+            }
+            if ((authMode === 'signup' || authMode === 'updatePassword') && password !== confirmPassword) {
+                setAuthStatus('Құпиясөздер бірдей емес. Қайта тексеріңіз.', 'error');
+                return;
+            }
+            submit.disabled = true;
+            const oldText = submit.textContent;
+            submit.textContent = 'Күте тұрыңыз...';
+            try {
+                if (authMode === 'signup') {
+                    const { data, error } = await supabaseAuthClient.auth.signUp({
+                        email,
+                        password,
+                        options: { emailRedirectTo: getAuthRedirectUrl() }
+                    });
+                    if (error) throw error;
+                    if (data && data.session) {
+                        currentAuthUser = data.session.user;
+                        renderAuthControls();
+                        setAuthStatus('Аккаунт сәтті құрылды. Қош келдіңіз!', 'success');
+                        window.setTimeout(closeAuthModal, 1200);
+                    } else {
+                        setAuthStatus('Тіркелу сұранысы қабылданды. Электрондық поштаңызды ашып, растау сілтемесін басыңыз. Спам бумасын да тексеріңіз.', 'success');
+                    }
+                } else if (authMode === 'login') {
+                    const { data, error } = await supabaseAuthClient.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                    currentAuthUser = data.user || data.session?.user || null;
+                    renderAuthControls();
+                    setAuthStatus('Сәтті кірдіңіз!', 'success');
+                    window.setTimeout(closeAuthModal, 700);
+                } else if (authMode === 'updatePassword') {
+                    const { error } = await supabaseAuthClient.auth.updateUser({ password });
+                    if (error) throw error;
+                    setAuthStatus('Құпиясөз сақталды. Енді осы құпиясөзбен кіре аласыз.', 'success');
+                    window.setTimeout(() => {
+                        closeAuthModal();
+                        switchAuthMode('login');
+                    }, 1800);
+                }
+            } catch (error) {
+                const message = error?.message || 'Сұраныс орындалмады. Қайталап көріңіз.';
+                setAuthStatus(message, 'error');
+            } finally {
+                submit.disabled = false;
+                submit.textContent = oldText;
+            }
+        }
+
+        async function sendPasswordReset() {
+            if (!supabaseAuthClient) {
+                setAuthStatus('Supabase клиенті жүктелмеді. Бетті жаңартып көріңіз.', 'error');
+                return;
+            }
+            const email = document.getElementById('authEmail').value.trim();
+            if (!email) {
+                setAuthStatus('Алдымен электрондық поштаңызды енгізіңіз.', 'error');
+                document.getElementById('authEmail').focus();
+                return;
+            }
+            try {
+                const { error } = await supabaseAuthClient.auth.resetPasswordForEmail(email, { redirectTo: getAuthRedirectUrl() });
+                if (error) throw error;
+                setAuthStatus('Құпиясөзді қалпына келтіру сілтемесі жіберілсе, ол электрондық поштаңызға келеді. Спам бумасын да тексеріңіз.', 'success');
+            } catch (error) {
+                setAuthStatus(error?.message || 'Хатты жіберу мүмкін болмады.', 'error');
+            }
+        }
+
+        async function logoutUser() {
+            if (!supabaseAuthClient) return;
+            const { error } = await supabaseAuthClient.auth.signOut();
+            if (error) {
+                window.alert('Аккаунттан шығу мүмкін болмады: ' + error.message);
+                return;
+            }
+            currentAuthUser = null;
+            renderAuthControls();
+        }
+
+        async function initializeSupabaseAuth() {
+            const url = SUPABASE_URL;
+            const key = SUPABASE_PUBLISHABLE_KEY;
+            if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+                setAuthStatus('Supabase кітапханасы жүктелмеді. Интернет байланысын тексеріңіз.', 'error');
+                return;
+            }
+            supabaseAuthClient = window.supabase.createClient(url, key, {
+                auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
+            });
+            document.getElementById('authForm').addEventListener('submit', handleAuthSubmit);
+            const { data, error } = await supabaseAuthClient.auth.getSession();
+            if (error) console.warn('Supabase session could not be read:', error.message);
+            currentAuthUser = data?.session?.user || null;
+            renderAuthControls();
+            supabaseAuthClient.auth.onAuthStateChange((event, session) => {
+                currentAuthUser = session?.user || null;
+                renderAuthControls();
+                if (!authFlowHandled && session && (initialAuthFlowType === 'invite' || initialAuthFlowType === 'recovery')) {
+                    authFlowHandled = true;
+                    window.setTimeout(() => {
+                        openAuthModal('updatePassword');
+                        setAuthStatus(initialAuthFlowType === 'invite' ? 'Шақыру қабылданды. Аккаунт үшін құпиясөз орнатыңыз.' : 'Қалпына келтіру сілтемесі қабылданды. Жаңа құпиясөз орнатыңыз.', 'info');
+                    }, 100);
+                }
+            });
+            if (data?.session && (initialAuthFlowType === 'invite' || initialAuthFlowType === 'recovery') && !authFlowHandled) {
+                authFlowHandled = true;
+                openAuthModal('updatePassword');
+                setAuthStatus(initialAuthFlowType === 'invite' ? 'Шақыру қабылданды. Аккаунт үшін құпиясөз орнатыңыз.' : 'Жаңа құпиясөз орнатыңыз.', 'info');
+            }
+            // Remove one-time tokens from the address bar after Supabase has had a chance to process them.
+            if (data?.session && window.location.hash && /access_token=|refresh_token=/.test(window.location.hash)) {
+                window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            }
+        }
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') closeAuthModal();
+        });
+        document.getElementById('authModal').addEventListener('click', event => {
+            if (event.target.id === 'authModal') closeAuthModal();
+        });
+        initializeSupabaseAuth().catch(error => {
+            console.error('Supabase initialization error:', error);
+            renderAuthControls();
+        });
+
     </script>
 </body>
 </html>
