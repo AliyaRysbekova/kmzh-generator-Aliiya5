@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ҚМЖ Генераторы — автоматты ЖИ нұсқасы</title>
+    <title>ҚМЖ Генераторы — V16: бос титулдық деректер</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -26,7 +26,11 @@
         .descriptor-table th { background: #eef2ff; color: #3730a3; }
         .visual-card { background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%); border: 1px solid #c7d2fe; border-radius: 8px; padding: 8px; margin-top: 7px; }
         .task-content { line-height: 1.5; overflow-wrap: anywhere; }
-    </style>
+            .ebk-task-box { margin-top: 10px; padding: 10px; border: 1.5px solid #fbbf24; border-radius: 10px; background: #fffbeb; font-size: 12px; }
+        .ebk-task-box > strong { color: #92400e; }
+        .formative-assessment { margin-top: 10px; padding: 8px; border: 1px solid #86efac; border-radius: 8px; background: #f0fdf4; font-size: 11px; line-height: 1.4; white-space: normal; }
+        .formative-assessment strong { color: #166534; display: block; margin-bottom: 3px; }
+</style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
 
@@ -37,7 +41,7 @@
                 <i class="fa-solid fa-file-pen text-2xl text-yellow-300"></i>
                 <div>
                     <h1 class="text-xl font-bold">ҚМЖ Генераторы</h1>
-                    <p class="text-xs text-indigo-200">Автоматты ЖИ-генерация • 10 балл • ЕБҚ қолдауы • Word экспорты</p>
+                    <p class="text-xs text-indigo-200">Автоматты ЖИ-генерация • көрнекілік • шартты ЕБҚ бағаны • ықшам ҚМЖ және қосымшалар</p>
                 </div>
             </div>
         </div>
@@ -83,6 +87,19 @@
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Сабақтың тақырыбы</label>
                 <input type="text" id="topic" placeholder="Мысалы: Нәруыздың құрылымы мен қызметі" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3">
+                <label for="lessonType" class="block text-xs font-semibold text-slate-700 mb-1">Сабақтың басым бағыты</label>
+                <select id="lessonType" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <option value="auto" selected>Автоматты таңдау — оқу мақсатына қарай</option>
+                    <option value="new">Жаңа білімді меңгеру</option>
+                    <option value="research">Зерттеу және эксперимент</option>
+                    <option value="pisa">Функционалдық сауаттылық (PISA)</option>
+                    <option value="stem">STEM/STEAM жобасы</option>
+                    <option value="practice">Бекіту және білімді қолдану</option>
+                </select>
+                <p class="text-xs text-slate-500 mt-1">Автоматты режим оқу мақсатына сай бағытты таңдайды. Қажет болса, сабақ бағытын өзіңіз белгілеңіз.</p>
             </div>
 
             <div>
@@ -140,21 +157,27 @@
 
             <!-- KMZH Document Container -->
             <div id="kmzhContainer" class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200 print-area space-y-6">
-                <div class="text-center border-b pb-4">
-                    <span class="text-xs uppercase tracking-widest text-indigo-600 font-bold">ҚЫСҚА МЕРЗІМДІ САБАҚ ЖОСПАРЫ (ҚМЖ)</span>
-                    <h2 id="outTopic" class="text-xl font-bold text-slate-800 mt-1">Сабақ тақырыбы көрсетілмеген</h2>
-                    <p class="text-xs text-slate-500 mt-1">
-                        Пән: <span id="outSubject" class="font-medium text-slate-700">-</span> | 
-                        Сынып: <span id="outGrade" class="font-medium text-slate-700">-</span> | 
-                        Бөлім: <span id="outUnit" class="font-medium text-slate-700">-</span>
-                    </p>
-                </div>
-
-                <!-- Info Table -->
-                <table class="w-full text-xs text-left">
+                <!-- Бос титулдық деректер: мұғалім Word/PDF жүктегеннен кейін толтырады -->
+                <table id="teacherHeaderTable" class="w-full text-xs text-left" style="border-collapse:collapse; margin-bottom:12px;">
+                    <tbody>
+                        <tr><td style="border:1px solid #000; padding:4px; width:23%; font-weight:bold;">Білім беру ұйымының атауы</td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
+                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;">Пәні:</td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
+                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;">Бөлім:</td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
+                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;">Педагогтің аты-жөні:</td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
+                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;">Сынып:</td><td style="border:1px solid #000; padding:4px; height:22px;">
+                            <table style="width:100%; border-collapse:collapse; margin:0;"><tr><td style="border:0; padding:0; width:50%;">Қатысушылар саны:</td><td style="border:0; border-left:1px solid #000; padding:0 0 0 8px;">Қатыспағандар саны:</td></tr></table>
+                        </td></tr>
+                    </tbody>
+                </table>
+                <!-- Негізгі мәліметтер: бос шапкадан кейін бірден жалғасады, артық тақырыптық блок жоқ -->
+                <table id="lessonInfoTable" class="w-full text-xs text-left" style="border-collapse:collapse; margin-top:0;">
                     <tbody>
                         <tr>
-                            <td class="font-bold bg-slate-50 p-2 w-1/4">Оқу мақсаты:</td>
+                            <td class="font-bold bg-slate-50 p-2 w-1/4">Сабақтың тақырыбы:</td>
+                            <td id="outTopic" class="p-2" colspan="3">-</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold bg-slate-50 p-2 w-1/4">Оқу бағдарламасына сәйкес оқыту мақсаты: (оқу мақсаты)</td>
                             <td id="outObjective" class="p-2" colspan="3">-</td>
                         </tr>
                         <tr>
@@ -170,9 +193,9 @@
 
                 <!-- Main Schedule Table -->
                 <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-left">
+                    <table id="kmzhTable" class="w-full text-xs text-left">
                         <thead><tr class="bg-slate-100 text-xs">
- <th class="p-2 border" style="width:8%">Кезең / Уақыт</th><th class="p-2 border" style="width:15%">Мұғалім әрекеті</th><th class="p-2 border" style="width:30%">Оқушы әрекеті &amp; Тапсырмалар</th><th class="p-2 border" style="width:17%">Бағалау</th><th class="p-2 border" style="width:22%">ЕБҚ оқушыларына қолдау</th><th class="p-2 border" style="width:8%">Ресурстар</th></tr></thead>
+ <th class="p-2 border" style="width:8%">Кезең / Уақыт</th><th class="p-2 border" style="width:17%">Мұғалім әрекеті</th><th class="p-2 border" style="width:31%">Оқушы әрекеті және тапсырма</th><th class="p-2 border" style="width:20%">Бағалау</th><th class="p-2 border ebk-col" id="ebkColumnHeader" style="width:16%" hidden>ЕБҚ оқушыларына қолдау</th><th class="p-2 border" style="width:8%">Ресурстар</th></tr></thead>
                         <tbody id="kmzhTableBody">
                             <tr>
                                 <td colspan="6" class="p-6 text-center text-slate-400 italic">
@@ -182,6 +205,11 @@
                         </tbody>
                     </table>
                 </div>
+                <section id="lessonAppendices" class="hidden mt-8 border-t-2 border-indigo-200 pt-5">
+                    <h3 class="text-lg font-bold text-indigo-900 mb-2">Сабаққа арналған қосымшалар</h3>
+                    <p class="text-xs text-slate-500 mb-3">Толық тапсырма мәтіндері, оқушыға берілетін материалдар, ЖИ промпттары және жауап кілттері.</p>
+                    <div id="appendicesContent"></div>
+                </section>
             </div>
         </section>
     </main>
@@ -212,7 +240,7 @@
         <div id="answerStatus" class="hidden rounded-lg border p-3 text-sm mb-3" role="alert" aria-live="polite"></div>
         <div class="flex flex-wrap justify-end gap-2">
           <button type="button" onclick="closeManualAi()" class="text-sm px-4 py-2 rounded-lg border">Жабу</button>
-          <button type="button" onclick="buildFromTrialAnswer()" class="text-sm font-semibold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">ҚМЖ құру</button>
+          <button type="button" id="buildTrialBtn" class="relative z-10 pointer-events-auto cursor-pointer text-sm font-semibold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white">ҚМЖ құру</button>
         </div>
       </div>
     </div>
@@ -220,6 +248,12 @@
  <script>
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const nl = s => esc(s).replace(/\n/g, '<br>');
+        // Safe setter: the printable ҚМЖ header no longer contains redundant subject/grade/unit output fields.
+        // Keep older update calls from failing when an optional element is not present.
+        function setTextIfPresent(id, value) {
+            const element = document.getElementById(id);
+            if (element) element.innerText = value == null ? '' : String(value);
+        }
         const EMPTY_ROW = '<tr><td colspan="6" class="p-6 text-center text-slate-400 italic">Форманы толтырып, «ҚМЖ Генерациялау» батырмасын басыңыз. Дайын ҚМЖ осы жерде автоматты түрде ашылады.</td></tr>';
 
         const METHODS = `Жүгірмелі сөйлемдер – қабырғадағы сөйлемдерді оқып, топқа жеткізу; Үштіктер – 3 оқушы: айтушы, сұрақ қоюшы, бағалаушы; Домино – сұрақ пен жауап қималарын сәйкестендіру; Лото – қоржыннан нөмір/сұрақ алу; Бір картина – парақты айналдырып ой жазу; 3х3 – 9 торлы кестеден термин таңдап түсіндіру; Мұғалімге сұрақ – оқушы сұрақ құрастырады; Тиын – тиын лақтырып сұрақ қою; Құпиясы бар қорап – қорапшадан сұрақ алу; Блиц-сұрау – терминді айтпай түсіндіру; Бинго – 9 термин, сұрақ бойынша сызу; Карталар – сұрақ-жауап карталарын алмасу; Қарама-қарсы сұрақтар – екі топ бір-біріне сұрақ қояды; Алфавит – әріптен басталатын термин айту; Иә-жоқ – тұжырымға қарай бұрылу; 6 қалпақ – 6 рөлде талқылау; Бір минуттық эссе; Қағып ал! – анықтамаға сай термин карточкасын қағып алу; Модерация – идеяларды стикерге жазу; Стоп-кадр – видеоны тоқтатып сұрақ қою; Сөйлем қос – мәтінді кезекпен жалғастыру; Бүктелген қағаз – сұрақ жазып алмасу; Эксперт бұрышы – эксперт оқушы көмектеседі; Керемет қабырға – сұрақтарды қабырғаға жазу; Кір жаю – түсінгенін жіпке ілу; Төрт бұрыш – A,B,C,D бұрышын таңдау; Қос шеңбер – ішкі/сыртқы шеңбер жұптасу; Сигнал карталары – карта көтеріп жауап беру; RAFT – рөл, аудитория, формат, тақырып; Үш минуттық пауза – үнсіз ойланып жазу; Ойлан-Жұптас-Бөліс – жеке, жұппен, топпен`;
@@ -229,9 +263,13 @@
             document.getElementById('grade').value = '';
             document.getElementById('ebkEnabled').checked = false;
             document.getElementById('ebkOptions').classList.add('hidden');
+            document.getElementById('ebkColumnHeader').hidden = true;
+            document.getElementById('lessonAppendices').classList.add('hidden');
+            document.getElementById('appendicesContent').innerHTML = '';
+            currentRenderedData = null;
             document.querySelectorAll('input[name="ebkNeed"]').forEach(el => { el.checked = ['Қысқа әрі нақты нұсқаулықтар','Қадамдарға бөлінген тапсырмалар','Көрнекілік, суреттер және сызбалар'].includes(el.value); });
-            ['outSubject','outGrade','outUnit','outObjective','outLessonGoal','outValues'].forEach(id => document.getElementById(id).innerText = '-');
-            document.getElementById('outTopic').innerText = 'Сабақ тақырыбы көрсетілмеген';
+            ['outSubject','outGrade','outUnit','outObjective','outLessonGoal','outValues'].forEach(id => setTextIfPresent(id, '-'));
+            setTextIfPresent('outTopic', 'Сабақ тақырыбы көрсетілмеген');
             document.getElementById('kmzhTableBody').innerHTML = EMPTY_ROW;
             setStatus('', '');
             document.getElementById('aiModal').classList.add('hidden');
@@ -253,10 +291,17 @@
             if (typeof v === 'object') {
                 return String(
                     v.text ?? v.value ?? v.description ?? v.content ??
-                    v.task ?? v.answer ?? v.name ?? ''
+                    v.task ?? v.answer ?? v.name ?? v.label ?? v.step ?? v.prompt ?? ''
                 );
             }
             return '';
+        }
+
+        // Дескрипторларда «Білім алушы» және «Оқушы» тіркестерін көрсетпейміз.
+        function cleanDescriptor(v) {
+            return textOf(v).trim()
+                .replace(/^(?:Білім\s+алушы|Оқушы)\s*[:,—–-]?\s*/i, '')
+                .trim();
         }
 
         function getField(obj, names) {
@@ -295,152 +340,181 @@
         // Құрылымдалған визуал материалдарды шынайы HTML кесте, SVG график және схема түрінде көрсету.
         function renderVisuals(value) {
             if (value == null || value === '') return '';
-            const items = Array.isArray(value) ? value : (typeof value === 'object' ? [value] : []);
-            if (!items.length) {
-                const legacy = textOf(value);
-                return legacy ? `<div class="visual-card"><div class="font-bold text-indigo-800 mb-1">🖼 Көрнекілік</div><div class="task-content">${nl(legacy)}</div></div>` : '';
-            }
-            return items.map(v => {
-                if (typeof v === 'string') return `<div class="visual-card"><div class="font-bold text-indigo-800 mb-1">🖼 Көрнекілік</div><div class="task-content">${nl(v)}</div></div>`;
-                const type = String(v.type || 'image_description');
-                const title = esc(textOf(v.title) || 'Көрнекі материал');
-                const description = textOf(v.description);
+            const items = Array.isArray(value) ? value : (typeof value === 'object' ? [value] : [value]);
+            const safeHttpUrl = raw => {
+                const u = String(raw || '').trim();
+                return /^https?:\/\//i.test(u) ? u : '';
+            };
+            const escAttr = raw => esc(String(raw || '').replace(/\s+/g, ' ').trim());
+            return items.map((v, idx) => {
+                if (typeof v === 'string') {
+                    return `<div class="visual-card"><div class="font-bold text-indigo-800 mb-2">Көрнекілік ${idx + 1}</div><div class="task-content">${nl(v)}</div></div>`;
+                }
+                if (!v || typeof v !== 'object') return '';
+                const rawType = String(v.type || v.kind || v.visualType || v.format || 'image_description').toLowerCase();
+                const type = ({'схема':'diagram','flowchart':'diagram','process':'diagram','кесте':'table','таблица':'table','график':'graph','chart':'graph','image':'image_description','picture':'image_description','сурет':'image_description','diagram':'diagram','table':'table','graph':'graph'})[rawType] || rawType;
+                const titleText = textOf(v.title || v.name || v.caption) || 'Көрнекі материал';
+                const title = esc(titleText);
+                const description = textOf(v.description || v.caption || v.alt || v.explanation || v.text);
                 let body = '';
                 if (type === 'table') {
-                    const columns = normalizeArray(v.columns).map(textOf).filter(Boolean);
-                    const rows = normalizeArray(v.rows).map(row => normalizeArray(row).map(textOf));
+                    const columns = normalizeArray(v.columns || v.headers || v.headings).map(textOf).filter(Boolean);
+                    const rawRows = normalizeArray(v.rows || v.dataRows || v.values);
+                    const rows = rawRows.map(row => Array.isArray(row) ? row.map(textOf) : (row && typeof row === 'object' ? columns.map((c,i) => textOf(row[c] ?? row[String(i)] ?? row['col'+(i+1)])) : [textOf(row)]));
                     if (columns.length) {
                         const head = columns.map(c => `<th class="p-2 bg-indigo-50 text-left">${esc(c)}</th>`).join('');
                         const bodyRows = rows.map(row => `<tr>${columns.map((_,i) => `<td class="p-2">${esc(row[i] || '')}</td>`).join('')}</tr>`).join('');
                         body = `<div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr>${head}</tr></thead><tbody>${bodyRows}</tbody></table></div>`;
                     }
                 } else if (type === 'graph') {
-                    const data = normalizeArray(v.data).map(d => ({label: textOf(d && d.label), value: Number(d && d.value)})).filter(d => d.label && Number.isFinite(d.value));
+                    const data = normalizeArray(v.data || v.points || v.values).map(d => ({label: textOf(d && (d.label ?? d.name ?? d.x)), value: Number(d && (d.value ?? d.y))})).filter(d => d.label && Number.isFinite(d.value));
                     if (data.length) {
-                        const W = 520, H = 230, left = 44, right = 14, top = 28, bottom = 54;
+                        const W = 560, H = 250, left = 48, right = 14, top = 30, bottom = 58;
                         const plotW = W - left - right, plotH = H - top - bottom;
                         const minVal = Math.min(0, ...data.map(d => d.value));
                         const maxVal = Math.max(1, ...data.map(d => d.value));
                         const span = Math.max(1, maxVal - minVal);
                         const y = val => top + (maxVal - val) / span * plotH;
-                        const baseline = y(0);
-                        const step = plotW / data.length;
-                        const barW = Math.min(46, step * 0.62);
-                        const bars = data.map((d,i) => {
-                            const x = left + i * step + (step-barW)/2;
-                            const yy = Math.min(y(d.value), baseline);
-                            const hh = Math.max(1, Math.abs(baseline-y(d.value)));
-                            const shortLabel = d.label.length > 13 ? d.label.slice(0,12)+'…' : d.label;
-                            return `<rect x="${x.toFixed(1)}" y="${yy.toFixed(1)}" width="${barW.toFixed(1)}" height="${hh.toFixed(1)}" rx="3" fill="#818cf8"><title>${esc(d.label)}: ${d.value}</title></rect><text x="${(x+barW/2).toFixed(1)}" y="${Math.max(14,yy-5).toFixed(1)}" font-size="10" text-anchor="middle" fill="#312e81">${esc(String(d.value))}</text><text x="${(x+barW/2).toFixed(1)}" y="${H-32}" font-size="9" text-anchor="middle" fill="#334155">${esc(shortLabel)}</text>`;
-                        }).join('');
-                        body = `<div class="overflow-x-auto"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}" style="width:100%;min-width:280px;max-height:320px"><text x="${left}" y="16" font-size="11" fill="#334155">${esc(textOf(v.yLabel) || 'Мән')}</text><line x1="${left}" y1="${top}" x2="${left}" y2="${baseline}" stroke="#64748b"/><line x1="${left}" y1="${baseline}" x2="${W-right}" y2="${baseline}" stroke="#64748b"/>${bars}<text x="${W/2}" y="${H-7}" font-size="11" text-anchor="middle" fill="#334155">${esc(textOf(v.xLabel) || 'Көрсеткіш')}</text></svg></div>`;
+                        const baseline = y(0), step = plotW / data.length, barW = Math.min(48, step * 0.62);
+                        const grid = Array.from({length:5},(_,i)=>{const val=minVal+(maxVal-minVal)*i/4;const yy=y(val);return `<line x1="${left}" y1="${yy}" x2="${W-right}" y2="${yy}" stroke="#dbeafe"/><text x="${left-7}" y="${yy+4}" font-size="10" text-anchor="end" fill="#475569">${esc(String(Number(val.toFixed(2))))}</text>`;}).join('');
+                        const bars = data.map((d,i) => { const x=left+i*step+(step-barW)/2, yy=Math.min(y(d.value),baseline), hh=Math.max(1,Math.abs(baseline-y(d.value))), label=d.label.length>15?d.label.slice(0,14)+'…':d.label; return `<rect x="${x.toFixed(1)}" y="${yy.toFixed(1)}" width="${barW.toFixed(1)}" height="${hh.toFixed(1)}" rx="3" fill="#818cf8"><title>${esc(d.label)}: ${d.value}</title></rect><text x="${(x+barW/2).toFixed(1)}" y="${Math.max(15,yy-5).toFixed(1)}" font-size="10" text-anchor="middle" fill="#312e81">${esc(String(d.value))}</text><text x="${(x+barW/2).toFixed(1)}" y="${H-34}" font-size="9" text-anchor="middle" fill="#334155">${esc(label)}</text>`; }).join('');
+                        body = `<div class="overflow-x-auto"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}" style="display:block;width:100%;min-width:280px;max-height:340px"><text x="${left}" y="16" font-size="11" fill="#334155">${esc(textOf(v.yLabel) || 'Мән')}</text>${grid}${bars}<text x="${W/2}" y="${H-7}" font-size="11" text-anchor="middle" fill="#334155">${esc(textOf(v.xLabel) || 'Көрсеткіш')}</text></svg></div>`;
                     }
                 } else if (type === 'diagram') {
-                    const steps = normalizeArray(v.steps).map(textOf).filter(Boolean);
-                    if (steps.length) body = `<div class="flex flex-col items-stretch gap-1">${steps.map((step,i) => `${i ? '<div class="text-center text-indigo-500 font-bold">↓</div>' : ''}<div class="rounded-lg border border-indigo-200 bg-white px-3 py-2 text-center text-sm font-medium">${esc(step)}</div>`).join('')}</div>`;
+                    const steps = normalizeArray(v.steps || v.nodes || v.items || v.process).map(textOf).filter(Boolean);
+                    if (steps.length) body = `<div class="flex flex-col items-stretch gap-1">${steps.map((step,i) => `${i ? '<div class="text-center text-indigo-500 font-bold" aria-hidden="true">↓</div>' : ''}<div class="visual-flow-step">${esc(step)}</div>`).join('')}</div>`;
                 } else {
-                    body = `<div class="rounded-lg bg-white border border-indigo-100 p-3"><div class="text-2xl mb-1">🖼️</div><div class="text-sm">${nl(description || 'Көрнекі материалға сипаттама берілмеген.')}</div></div>`;
+                    const imageUrl = safeHttpUrl(v.image_url || v.imageUrl || v.url || v.src);
+                    const imageData = typeof (v.data_uri || v.dataUri || v.base64) === 'string' ? String(v.data_uri || v.dataUri || v.base64).trim() : '';
+                    const safeData = /^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=\s]+$/i.test(imageData) ? imageData : '';
+                    if (imageUrl || safeData) {
+                        const source = imageUrl || safeData;
+                        body = `<figure class="rounded-lg bg-white border border-indigo-100 p-2"><img src="${escAttr(source)}" alt="${title}" loading="lazy" class="visual-image" onerror="this.style.display='none';this.nextElementSibling.classList.remove('hidden')"><figcaption class="hidden text-xs text-amber-700 p-2">Сурет жүктелмеді: сілтеме ашылмады.</figcaption>${description ? `<figcaption class="text-xs mt-2">${nl(description)}</figcaption>` : ''}</figure>`;
+                    } else {
+                        // A visual panel is always rendered even when the model gives only a description.
+                        // This avoids an empty image slot and gives teachers a printable visual reference.
+                        const words = (description || titleText).split(/\s+/).filter(Boolean).slice(0,9);
+                        const chips = words.map((word,i)=>`<span x="0" class="inline-block rounded-full px-2 py-1 m-1 text-xs font-semibold" style="background:${['#dbeafe','#dcfce7','#fef3c7','#f3e8ff'][i%4]};color:#334155">${esc(word)}</span>`).join('');
+                        body = `<div class="rounded-lg bg-white border border-indigo-100 p-3"><svg viewBox="0 0 520 90" role="img" aria-label="${title}" style="width:100%;height:auto;display:block"><rect x="2" y="2" width="516" height="86" rx="12" fill="#eef2ff" stroke="#a5b4fc"/><circle cx="46" cy="45" r="22" fill="#c7d2fe"/><path d="M36 45h20M46 35v20" stroke="#4338ca" stroke-width="4" stroke-linecap="round"/><path d="M77 45h28m-7 -7 7 7-7 7" stroke="#818cf8" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="120" y="40" font-size="15" font-weight="700" fill="#312e81">${esc(titleText.slice(0,42))}</text><text x="120" y="61" font-size="11" fill="#475569">Оқу материалы / визуалды тірек</text></svg><div class="mt-2">${chips}</div>${description ? `<div class="text-sm mt-2">${nl(description)}</div>` : ''}<p class="text-xs text-slate-500 mt-2">Нақты фотосурет автоматты түрде жасалмайды; бұл — сипаттамаға негізделген визуалды тірек.</p></div>`;
+                    }
                 }
-                const desc = description && type !== 'image_description' ? `<p class="text-xs text-slate-600 mt-2">${nl(description)}</p>` : '';
-                return `<div class="visual-card"><div class="font-bold text-indigo-800 mb-2">${type === 'table' ? '▦' : type === 'graph' ? '▥' : type === 'diagram' ? '↘' : '🖼'} ${title}</div>${body || `<div class="text-sm">${nl(description || 'Материалды нақтылау қажет.')}</div>`}${desc}</div>`;
-            }).join('');
+                return `<div class="visual-card"><div class="font-bold text-indigo-800 mb-2">${type === 'table' ? '▦' : type === 'graph' ? '▥' : type === 'diagram' ? '↘' : '🖼'} ${title}</div>${body || `<div class="text-sm">${nl(description || 'Көрнекі материалдың өрістері толық берілмеген.')}</div>`}</div>`;
+            }).filter(Boolean).join('');
         }
 
-        function render(d) {
-            document.getElementById('outLessonGoal').innerText =
-                textOf(getField(d, ['lessonGoal','lesson_goal','goal','сабақМақсаты'])) || '-';
-            document.getElementById('outValues').innerText =
-                textOf(getField(d, ['values','value','құндылықтар'])) || '-';
-
-            const tb = document.getElementById('kmzhTableBody');
-            tb.innerHTML = '';
+        let currentRenderedData = null;
+        function render(d, quiet = false) {
+            currentRenderedData = d;
+            document.getElementById('outLessonGoal').innerText = textOf(getField(d, ['lessonGoal','lesson_goal','goal','сабақМақсаты'])) || '-';
+            document.getElementById('outValues').innerText = textOf(getField(d, ['values','value','құндылықтар'])) || '-';
+            const ebkOn = !!document.getElementById('ebkEnabled').checked;
+            document.getElementById('ebkColumnHeader').hidden = !ebkOn;
+            const tb = document.getElementById('kmzhTableBody'); tb.innerHTML = '';
             let n = 0;
-
+            let ebkTotal = 0;
             const stages = normalizeArray(d.stages || d.stage || d.lessonStages);
-            const stageNames = [
-                'Сабақтың басы (0–7 мин)',
-                'Сабақтың ортасы (7–32 мин)',
-                'Сабақтың соңы (32–45 мин)'
-            ];
-
+            const stageNames = ['Сабақтың басы (0–7 мин)','Сабақтың ортасы (7–32 мин)','Сабақтың соңы (32–45 мин)'];
+            const appendixItems = [];
+            const addAppendix = (title, content, stageName='') => {
+                const txt = textOf(content).trim();
+                if (txt) appendixItems.push({title: String(title || 'Қосымша материал'), content: txt, stage: stageName});
+            };
             stages.forEach((s, index) => {
                 s = s || {};
                 const e = getEbk(s);
-
-                const teacher = textOf(getField(s, [
-                    'teacher','teacherAction','teacher_activity','мұғалім','мұғалімӘрекеті'
-                ]));
-                const student = textOf(getField(s, [
-                    'student','studentAction','student_activity','оқушы','оқушыӘрекеті'
-                ]));
-                const resources = textOf(getField(s, [
-                    'resources','resource','ресурстар'
-                ]));
-
+                const stageName = textOf(getField(s, ['stage','name','кезең'])) || stageNames[index] || `Кезең ${index+1}`;
+                const teacherFull = textOf(getField(s, ['teacher','teacherAction','teacher_activity','мұғалім','мұғалімӘрекеті']));
+                let studentFull = textOf(getField(s, ['student','studentAction','student_activity','оқушы','оқушыӘрекеті']));
+                // Кейбір ЖИ жауаптарында ЕБҚ тапсырмасы student мәтінінің ішінде де келеді.
+                // Сол қайталанатын бөлікті алып тастаймыз; төменде бір ғана рамка ретінде көрсетіледі.
+                if (ebkOn) {
+                    studentFull = studentFull
+                        .replace(/\[?ЕБҚ\s+оқушысына\s+арналған\s+тапсырма\s*:?\]?\s*[：:]?[^\n]*(?:\n(?!\s*(?:ЕБҚ\s+дескрипторлары|\[?ЕБҚ\s+оқушысына\s+арналған\s+тапсырма)).*)*/gi, '')
+                        .replace(/ЕБҚ\s+дескрипторлары\s*:?[^\n]*(?:\n(?!\s*(?:Қалыптастырушы\s+бағалау|Жұмыс\s+түрі|\d+[-.)])).*)*/gi, '')
+                        .replace(/\n{3,}/g, '\n\n').trim();
+                }
+                const resourcesFull = textOf(getField(s, ['resources','resource','ресурстар']));
+                const taskDetails = textOf(getField(s, ['taskDetails','fullTask','full_task','тапсырмаМәтіні','толықТапсырма']));
+                const promptDetails = textOf(getField(s, ['aiPrompt','prompt','ЖИпромпты','promptText']));
+                const answerKey = textOf(getField(s, ['answerKey','answers','expectedAnswers','жауапКілті','күтілетінЖауап']));
+                const teacherPrompt = textOf(getField(s, ['teacherPrompt','teacher_prompt']));
                 const descriptors = getMainDescriptors(s);
-
-                const descriptorRows = descriptors.map(x => {
-                    const txt = textOf(x);
-                    if (!txt) return '';
-                    n++;
-                    return `<tr><td>${esc(txt)}</td><td style="text-align:center;width:55px;font-weight:700;">1</td></tr>`;
-                }).filter(Boolean).join('');
-                const ds = descriptorRows
-                    ? `<table class="descriptor-table w-full text-xs"><thead><tr><th>Дескриптор</th><th style="width:55px;text-align:center;">Балл</th></tr></thead><tbody>${descriptorRows}</tbody></table>`
-                    : '-';
-
-                const support = textOf(getField(e, [
-                    'support','қолдау','supportType','supportTypes'
-                ]));
-                const task = textOf(getField(e, [
-                    'task','ebkTask','жеңілдетілгенТапсырма','simplifiedTask'
-                ]));
-                const ebDescriptors = normalizeArray(getField(e, [
-                    'descriptors','descriptor','дескрипторлар'
-                ]));
-
-                const eb = `Қолдау түрлері: ${support || '-'}\n\n` +
-                    `Жеңілдетілген тапсырма: ${task || '-'}\n\n` +
-                    `Дескрипторлар:\n` +
-                    (ebDescriptors.length
-                        ? ebDescriptors.map(x => `• ${textOf(x)} — 1 балл`).join('\n')
-                        : '-');
-
+                const descriptorRows = descriptors.map(x => { const txt=cleanDescriptor(x); if(!txt) return ''; n++; return `<tr><td>${esc(txt)}</td><td style="text-align:center;width:45px;font-weight:700;">1</td></tr>`; }).filter(Boolean).join('');
+                const ds = descriptorRows ? `<table class="descriptor-table w-full text-xs"><thead><tr><th>Дескриптор</th><th style="width:45px;text-align:center;">Балл</th></tr></thead><tbody>${descriptorRows}</tbody></table>` : '-';
+                const support = textOf(getField(e, ['support','қолдау','supportType','supportTypes']));
+                const ebkTask = textOf(getField(e, ['task','ebkTask','жеңілдетілгенТапсырма','simplifiedTask']));
+                const ebDescriptors = normalizeArray(getField(e, ['descriptors','descriptor','дескрипторлар']));
+                if (ebkOn) ebkTotal += ebDescriptors.filter(x => textOf(x)).length;
+                // ЕБҚ бағанында тек қолдау мен бейімдеу тәсілдері қалады.
+                const eb = `Қолдау түрлері: ${support || 'Қадамдық нұсқаулық, қысқа әрі нақты нұсқаулар'}\nТапсырманы бейімдеу: ${textOf(getField(e, ['adaptation','scaffolding','бейімдеу','жеңілдету'])) || 'Тапсырманы шағын қадамдарға бөлу, тірек сөздер мен үлгі ұсыну'}`;
+                // ЕБҚ тапсырмасы тек бір рет — жалпы тапсырмадан кейінгі жеке рамкада беріледі.
+                // ЕБҚ дескрипторлары оқушы әрекетінде қайталанбайды; олар бағалау бағанына шығарылады.
+                const ebTaskBox = ebkOn && ebkTask
+                    ? `<div class="ebk-task-box"><strong>ЕБҚ оқушысына арналған тапсырма</strong><div class="mt-1">${nl(ebkTask)}</div></div>`
+                    : '';
+                const ebDescriptorsHtml = ebkOn && ebDescriptors.length
+                    ? `<div class="mt-3"><strong class="text-emerald-800">ЕБҚ дескрипторлары</strong><table class="descriptor-table w-full text-xs mt-1"><thead><tr><th>Дескриптор</th><th style="width:45px;text-align:center;">Балл</th></tr></thead><tbody>${ebDescriptors.map(x=>`<tr><td>${esc(cleanDescriptor(x))}</td><td style="text-align:center;font-weight:700;">1</td></tr>`).join('')}</tbody></table></div>`
+                    : '';
+                let formative = textOf(getField(s, ['formativeAssessment','formative_assessment','қалыптастырушыБағалау','қб','assessmentMethod']));
+                formative = formative.replace(/^\s*Қалыптастырушы\s+бағалау\s*:\s*/i, '').trim();
                 const reflection = textOf(getField(s, ['reflection','рефлексия']));
-                const visuals = getField(s, ['visuals','visual','көрнекілік','визуал']);
+                const studentData = getField(s, ['student','studentAction','student_activity','оқушы','оқушыӘрекеті']);
+                const visuals = getField(s, ['visuals','visual','көрнекілік','визуал']) || (studentData && typeof studentData === 'object' ? getField(studentData, ['visuals','visual','көрнекілік','визуал']) : '') || (s.task && typeof s.task === 'object' ? getField(s.task, ['visuals','visual','көрнекілік','визуал']) : '');
                 const visualHtml = renderVisuals(visuals);
-                const stu = `<div class="task-content">${nl(student || '-')}</div>${visualHtml}` +
-                    (reflection ? `<div class="mt-2 rounded-lg bg-violet-50 border border-violet-200 p-2"><strong class="text-violet-800">Рефлексия:</strong><br>${nl(reflection)}</div>` : '');
-
-                const stageName =
-                    textOf(getField(s, ['stage','name','кезең'])) ||
-                    stageNames[index] ||
-                    `Кезең ${index + 1}`;
-
-                const c = (t, x = '') =>
-                    `<td class="p-2 align-top border-r ${x}" contenteditable="true">${nl(t || '')}</td>`;
-
-                const tr = document.createElement('tr');
-                tr.className = 'border-b';
-                tr.innerHTML =
-                    `<td class="p-2 align-top font-bold text-indigo-900 border-r bg-slate-50">${esc(stageName)}</td>` +
-                    c(teacher || '-') +
+                // Keep the schedule compact; full instructions and prompts go into appendices.
+                const studentShort = textOf(getField(s, ['studentSummary','student_summary','қысқашаТапсырма','taskSummary'])) || studentFull;
+                const teacherShort = textOf(getField(s, ['teacherSummary','teacher_summary','қысқашаМұғалімӘрекеті'])) || teacherFull;
+                const shortText = (txt, max=360) => txt.length > max ? txt.slice(0,max).trim() + '… (толық нұсқасы қосымшада)' : txt;
+                const visualsInCell = visualHtml ? `<div class="visuals-in-plan">${visualHtml}</div>` : '';
+                const reflectionPrompts = [
+                    '1) Қай тапсырма арқылы бүгінгі оқу мақсатына жақындадың? Нақты мысал келтір.',
+                    '2) Қай тапсырма қиын болды? Қиындықты қалай шештің?',
+                    '3) Бүгін не үйрендің және оны қайда қолдана аласың?'
+                ].join('\\n');
+                // Reflection belongs only to the lesson conclusion, never to the beginning/middle.
+                const reflectionText = reflection || reflectionPrompts;
+                const reflectionHtml = index === 2
+                    ? `<div class="mt-2 rounded-lg bg-violet-50 border border-violet-200 p-2"><strong class="text-violet-800">Рефлексия (сабақ соңында):</strong><div class="mt-1">${nl(shortText(reflectionText,420))}</div></div>`
+                    : '';
+                const stu = `<div class="task-content">${nl(shortText(studentShort || '-',650))}</div>${visualsInCell}${ebTaskBox}${reflectionHtml}`;
+                if (taskDetails) addAppendix(`${stageName}: тапсырманың толық мәтіні`, taskDetails, stageName);
+                // If the main student activity is long, preserve the full original in the appendix.
+                if (studentFull.length > 420 && studentFull !== studentShort) addAppendix(`${stageName}: оқушыға арналған толық нұсқаулық`, studentFull, stageName);
+                else if (studentFull.length > 420) addAppendix(`${stageName}: тапсырманың толық мәтіні`, studentFull, stageName);
+                if (promptDetails || teacherPrompt) addAppendix(`${stageName}: ЖИ промпты`, promptDetails || teacherPrompt, stageName);
+                const teacherExplanation = textOf(getField(s, ['teacherExplanation','teacher_explanation','түсіндіруЖазбасы','мұғалімТүсіндірмесі']));
+                if (teacherExplanation) addAppendix(`${stageName}: мұғалімге арналған түсіндіру жазбасы`, teacherExplanation, stageName);
+                else if (teacherFull.length > 520) addAppendix(`${stageName}: мұғалімнің толық түсіндіруі`, teacherFull, stageName);
+                if (answerKey) addAppendix(`${stageName}: жауап кілті / күтілетін жауаптар`, answerKey, stageName);
+                if (resourcesFull.length > 150) addAppendix(`${stageName}: ресурстар мен материалдар`, resourcesFull, stageName);
+                const resourceShort = resourcesFull.length > 150 ? resourcesFull.slice(0,150).trim() + '… (толық тізім қосымшада)' : resourcesFull;
+                const c = (t, x='') => `<td class="p-2 align-top border-r ${x}" contenteditable="true">${nl(t || '')}</td>`;
+                const tr = document.createElement('tr'); tr.className='border-b';
+                tr.innerHTML = `<td class="p-2 align-top font-bold text-indigo-900 border-r bg-slate-50">${esc(stageName)}</td>` +
+                    c(shortText(teacherShort || '-',300)) +
                     `<td class="p-2 align-top border-r task-content" contenteditable="true">${stu || '-'}</td>` +
-                    `<td class="p-2 align-top border-r bg-amber-50/30" contenteditable="true">${ds || '-'}</td>` +
-                    c(eb, 'bg-emerald-50/30') +
-                    c(resources || '-');
-
+                    `<td class="p-2 align-top border-r bg-amber-50/30" contenteditable="true">${ds || '-'}<div class="formative-assessment"><strong>Қалыптастырушы бағалау:</strong><div>${nl(formative || 'Мұғалім жауаптарды дескрипторлар бойынша тексеріп, дұрыс жауапты атап, қатені түзетуге қысқа кері байланыс береді.')}</div></div>${ebDescriptorsHtml}</td>` +
+                    (ebkOn ? c(eb, 'ebk-col bg-emerald-50/30') : '') +
+                    c(resourceShort || '-');
                 tb.appendChild(tr);
             });
-
-            const tot = document.createElement('tr');
-            tot.innerHTML = `<td colspan="6" class="p-2 text-right font-bold">Барлығы: ${n} балл</td>`;
-            tb.appendChild(tot);
-
-            if (n !== 10) {
-                alert(`Негізгі дескрипторлар саны ${n}. ҚМЖ талаптары бойынша 10 болуы керек: басы 2 + ортасы 6 + соңы 2.`);
-            }
+            const topAppendices = normalizeArray(d.appendices || d.appendix || d.қосымшалар);
+            topAppendices.forEach((a,i) => {
+                if (typeof a === 'string') addAppendix(`Қосымша ${i+1}`, a);
+                else if (a && typeof a === 'object') addAppendix(textOf(a.title || a.name) || `Қосымша ${i+1}`, a.content || a.text || a.body || a.prompt || a.task || a.description);
+            });
+            const appendixSection = document.getElementById('lessonAppendices');
+            const appendixContent = document.getElementById('appendicesContent');
+            if (appendixItems.length) {
+                appendixContent.innerHTML = appendixItems.map((a,i)=>`<article class="appendix-item"><h4>${i+1}. ${esc(a.title)}</h4>${a.stage ? `<p class="text-xs text-slate-500 mb-2">${esc(a.stage)}</p>` : ''}<div class="text-sm whitespace-pre-wrap">${nl(a.content)}</div></article>`).join('');
+                appendixSection.classList.remove('hidden');
+            } else { appendixContent.innerHTML=''; appendixSection.classList.add('hidden'); }
+            const total = document.createElement('tr');
+            total.innerHTML = `<td colspan="${ebkOn ? 6 : 5}" class="p-2 text-right font-bold">Барлығы: ${n} балл</td>`; tb.appendChild(total);
+            if (n !== 10 && !quiet) alert(`Негізгі дескрипторлар саны ${n}. ҚМЖ талаптары бойынша 10 болуы керек: басы 2 + ортасы 6 + соңы 2.`);
+            if (ebkOn && ebkTotal !== 10 && !quiet) alert(`ЕБҚ дескрипторларының жалпы саны ${ebkTotal}. ЕБҚ нұсқасы да 10 балл болуы үшін кезеңдер бойынша 2 + 6 + 2 = 10 дескриптор қажет.`);
         }
+
 
         // ====== Құпия деректер HTML-ге жазылмайды ======
         // Deploy жасағаннан кейін осы екі мәнді толтырыңыз.
@@ -495,6 +569,8 @@
 
         document.getElementById('ebkEnabled').addEventListener('change', function() {
             document.getElementById('ebkOptions').classList.toggle('hidden', !this.checked);
+            if (currentRenderedData) render(currentRenderedData, true);
+            else document.getElementById('ebkColumnHeader').hidden = !this.checked;
         });
 
         async function generateKMZH() {
@@ -505,6 +581,7 @@
                 unit: v('unit'),
                 topic: v('topic'),
                 objective: v('objective'),
+                lessonType: v('lessonType') || 'auto',
                 ebkEnabled: document.getElementById('ebkEnabled').checked,
                 ebkNeeds: Array.from(document.querySelectorAll('input[name="ebkNeed"]:checked')).map(el => el.value),
                 ebkOther: v('ebkOther')
@@ -559,11 +636,11 @@
                     throw new Error('ЖИ негізгі дескрипторларды 2 + 6 + 2 үлгісімен жасай алмады. Қайталап генерациялаңыз.');
                 }
 
-                document.getElementById('outTopic').innerText = p.topic;
-                document.getElementById('outSubject').innerText = p.subject;
-                document.getElementById('outGrade').innerText = p.grade + '-сынып';
-                document.getElementById('outUnit').innerText = p.unit;
-                document.getElementById('outObjective').innerText = p.objective;
+                setTextIfPresent('outTopic', p.topic);
+                setTextIfPresent('outSubject', p.subject);
+                setTextIfPresent('outGrade', p.grade + '-сынып');
+                setTextIfPresent('outUnit', p.unit);
+                setTextIfPresent('outObjective', p.objective);
                 render(d);
                 setStatus('ҚМЖ дайын! Кестедегі мәтінді қажет болса өңдеп, Word немесе PDF түрінде сақтаңыз.', 'success');
                 document.getElementById('kmzhContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -587,10 +664,13 @@
 
         function buildTrialPrompt(p) {
             const ebkInstruction = p.ebkEnabled
-                ? `ЕБҚ РЕЖИМІ ҚОСУЛЫ. Таңдалған қолдау түрлері: ${p.ebkNeeds.join(', ') || 'мұғалім жеке таңдайды'}. Қосымша өтініш: ${p.ebkOther || 'жоқ'}.\nЕБҚ қолдауын үш кезеңде нақты көрсет: бейімделген тапсырма, қадамдық нұсқаулық, көрнекі тірек, ресурстар және ЕБҚ-ға арналған жеке дескрипторлар. Оқу мақсатын өзгертпе және диагнозды болжама.`
-                : `ЕБҚ РЕЖИМІ ӨШІРУЛІ. Арнайы ЕБҚ тапсырмаларын қоспа; ebk.support және ebk.task өрістерінде «ЕБҚ режимі қосылмаған» деп жаз.`;
+                ? `ЕБҚ РЕЖИМІ ҚОСУЛЫ. Таңдалған қолдау түрлері: ${p.ebkNeeds.join(', ') || 'мұғалім жеке таңдайды'}. Қосымша өтініш: ${p.ebkOther || 'жоқ'}.\nЕБҚ оқушысына арналған бейімделген тапсырмаларды да 10 баллдық жүйемен жоспарла: жалпы сабақ бойынша ЕБҚ дескрипторлары дәл 10 болсын, әрқайсысы 1 балл; 1-кезеңде 2, 2-кезеңде 6, 3-кезеңде 2. Әр кезеңдегі ebk.descriptors массивінде сол кезеңге тиесілі дескрипторлар ғана болсын. Олар бейімделген тапсырманың нақты әрекеттерін бағаласын. Оқушы толық орындаса, ЕБҚ нұсқасы бойынша 10/10 ала алуы керек. Қолдау немесе жеңілдетілген формат балды автоматты түрде шектемесін; оқу мақсаты мен жеке қажеттіліктерді ескер. ЕБҚ қолдауын үш кезеңде нақты көрсет: бейімделген тапсырма, қадамдық нұсқаулық, көрнекі тірек және ресурстар. Оқу мақсатын өзгертпе және диагнозды болжама.`
+                : `ЕБҚ РЕЖИМІ ӨШІРУЛІ. ЕБҚ қолдауы, бейімделген тапсырма және ЕБҚ дескрипторларын жасама. ЕБҚ туралы мәтін ҚМЖ мазмұнына кірмесін; ebk өрісін бос объект ретінде беруге болады.`;
             return `Сен Қазақстанның жаңартылған білім беру мазмұны бойынша методист-экспертсің. Төмендегі деректер бойынша толық ҚМЖ-ны ҚАЗАҚ ТІЛІНДЕ құрастыр.
 Пән: ${p.subject}. Сынып: ${p.grade}. Бөлім: ${p.unit}. Сабақ тақырыбы: ${p.topic}. Оқу мақсаты: ${p.objective}.
+Сабақтың басым бағыты: ${({'auto':'Автоматты таңдау — оқу мақсатына қарай','new':'Жаңа білімді меңгеру','research':'Зерттеу және эксперимент','pisa':'Функционалдық сауаттылық (PISA)','stem':'STEM/STEAM жобасы','practice':'Бекіту және білімді қолдану'}[p.lessonType] || 'Автоматты таңдау — оқу мақсатына қарай')}.
+
+САБАҚ ТҮРІН ІСКЕ АСЫРУ: егер бағыт автоматты болса, оқу мақсатының етістігі мен мазмұнын талдап, ең лайықты бағытты өзің таңда және оны stages ішіндегі мұғалім мен оқушы әрекеттерінен нақты көрсет. Егер мұғалім бағытты өзі таңдаса, сабақтың үш кезеңіндегі тапсырмалар, мұғалімнің түсіндіруі, әдістер, ресурстар және қалыптастырушы бағалау осы бағытқа сәйкес болсын. «Жаңа білімді меңгеру» үшін негізгі ұғымдарды түсіндіру мен мысалдар; «Зерттеу және эксперимент» үшін зерттеу сұрағы, болжам, айнымалылар, қауіпсіздік, деректер және қорытынды; «Функционалдық сауаттылық (PISA)» үшін өмірлік жағдаят, деректер/кесте/графикті түсіндіру және дәлелді жауап; «STEM/STEAM жобасы» үшін нақты мәселе, критерийлер, жобалау/модельдеу, сынақ және жақсарту; «Бекіту және білімді қолдану» үшін әртүрлі деңгейдегі қолдану тапсырмалары мен қателерді талдау басым болсын. Сабақ бағытын тек атаумен шектемей, тапсырмаларда жүзеге асыр.
 
 МАҢЫЗДЫ: пайдаланушыға дайын сабақ жоспары қажет. Құрылымның үлгісін, бос шаблонды, «JSON құрылымы» деген мәтінді немесе көп нүктелері бар үлгі жауапты ҚАЙТАРМА. Барлық өрістерді нақты сабақ мазмұнымен толтыр.
 
@@ -598,24 +678,35 @@
 1. Сабақ мақсаты оқу мақсатынан туындасын. 2–3 құндылықты және олардың сабақтағы көрінісін көрсет.
 2. Сабақ 45 минут болсын: басы 0–7 минут, ортасы 7–32 минут, соңы 32–45 минут. Дәл үш кезең жаса.
 3. Әр әдістің алдында жұмыс түрін жаз: «Жұмыс түрі: Жеке жұмыс», «Жұмыс түрі: Жұптық жұмыс» немесе «Жұмыс түрі: Топтық жұмыс». Содан кейін әдіс атауы мен нақты орындау қадамдарын жаз.
-4. Мұғалім мен оқушы әрекеттері нақты, толық болсын. Оқушы тапсырмаларында нақты сұрақтар, тапсырма мәтіні, қажет болса жауап нұсқалары және күтілетін жауаптар болсын.
-5. Кемінде екі құрылымдалған көрнекілік бер: кесте, график, кезеңдік схема немесе сурет дайындауға арналған толық сипаттама. Құрылымдалған көрнекіліктер visuals массивінде болсын. Көрнекілік түрлері мен қажетті өрістері: table — title, columns массиві, rows массиві; graph — title, xLabel, yLabel және label/value бар data массиві; diagram — title және ретімен берілген steps массиві; image_description — title және толық description. Суретке жалған URL ойлап таппа. Ойдан жасалған деректер болса, оларды үлгі деректер деп белгіле.
-6. Сабаққа ЖИ-ді нақты кіріктір: құрал атауы, қолданылатын prompt, мұғалім/оқушы әрекеті, ЖИ жауабын тексеру әдісі және интернет/құрылғы болмағандағы балама.
-7. Негізгі дескриптор дәл 10 болсын: бірінші кезеңде 2, екінші кезеңде 6, үшінші кезеңде 2. Әр дескриптор нақты әрекетті білдірсін және мысалы, «Білім алушы жасуша бөліктерін атайды» сияқты толық сөйлем болсын. Дескриптордың орнына «Білім алушы ...» деп қалдырма. Әрқайсысы 1 балл. ЕБҚ дескрипторлары осы 10 балға қосылмасын.
-8. ${ebkInstruction}
+3А. МҰҒАЛІМНІҢ ТҮСІНДІРУІ МІНДЕТТІ: әр кезеңдегі teacher өрісінде тек ұйымдастыру әрекеттерін («топқа бөледі», «тапсырма береді») жазумен шектелме. Мұғалім оқушыға нені және қалай түсіндіретінін нақты жаз: негізгі ұғым/заңдылықтың қысқа түсіндірмесі, тақырыпқа қатысты бір нақты мысал немесе аналогия, оқушы назар аударуы тиіс маңызды белгі және жиі кездесетін қатеге қатысты ескерту. Сабақтың басында алдыңғы білімді жаңа тақырыппен байланыстыратын қысқа түсіндіру; орта кезеңде жаңа білімді ашатын түсіндіру және тапсырмаға дейінгі нұсқау; соңында жауаптарды жинақтап, негізгі қорытындыны бекіту болсын. Әр кезеңде 2–4 нақты сөйлем жеткілікті. Түсіндіру оқушының жасына және пәніне сай, ғылыми тұрғыдан дұрыс, нақты осы тақырыпқа қатысты болсын. «Мұғалім тақырыпты түсіндіреді» сияқты бос сөйлемдерді қолданба. Ұзақ теориялық мәтін қажет болса, оны appendices ішіне «Мұғалімге арналған түсіндіру жазбасы» ретінде енгізіп, кестеде қысқа мазмұнын қалдыр.
+3Б. МЕТОДТАР КІТАПХАНАСЫ: оқу мақсатына сай келгенде «30 белсенді әдіс» жинағындағы әдістерді таңдауға болады: «Жүгірмелі сөйлемдер», «Үштіктер», «Домино», «Лото», «Бір картина», «3х3», «Мұғалімге сұрақ», «Тиын», «Құпиясы бар қорап», «Блиц-сұрау», «Бинго», «Карталар», «Қарама-қарсы сұрақтар», «Алфавит», «Иә-жоқ», «6 қалпақ», «Бір минуттық эссе», «Қағып ал!», «Модерация», «Стоп-кадр», «Сөйлем қос», «Бүктелген қағаз», «Эксперт бұрышы», «Керемет қабырға», «Кір жаю», «Төрт бұрыш», «Қос шеңбер», «Сигнал карталары», «RAFT», «Үш минуттық пауза», «Ойлан-Жұптас-Бөліс». Әдісті атауы үшін ғана қолданба: оның мақсатына және тақырыпқа сай нақты тапсырма мен қадамдарын құрастыр. Бір сабақта 2–4 әдісті орынды таңда; барлық әдісті бір сабаққа тықпалама.
+4. ЕҢ МАҢЫЗДЫ ТАЛАП — ОҚУШЫҒА ТІКЕЛЕЙ ҚАРАТЫП ЖАЗУ: «Оқушы ... орындайды/жазады/табады/толықтырады» деген үшінші жақтағы баяндау формасын тапсырма шартында ҚОЛДАНБА. Тапсырманың әр шарты оқушыға арналған сыпайы бұйрық раймен аяқталсын: «оқыңыз», «белгілеңіз», «жазыңыз», «сәйкестендіріңіз», «сызықпен қосыңыз», «бос орындарды толтырыңыз», «суреттен табыңыз», «салыстырыңыз», «түсіндіріңіз», «дәлелдеңіз», «мысалдар табыңыз». МЫСАЛДАР: «Төмендегі 6 тұжырымды жеке оқып шығыңыз. Әр тұжырымның жанына “Иә” немесе “Жоқ” деп жазыңыз. Жалған тұжырымдарды дұрыс етіп түзетіп, дәптерге жазыңыз»; «Сол жақтағы терминдерді оң жақтағы анықтамалармен сызық арқылы сәйкестендіріңіз»; «Сөздер банкін пайдаланып, бос орындарды тиісті сөздермен толтырыңыз»; «Схеманы қарап, абиотикалық және биотикалық факторларды екі топқа бөліп жазыңыз»; «Жұппен жұмыс істеңіз: элементтерді сызықпен қосыңыз, жауаптарыңызды салыстырыңыз және бір мысалды түсіндіріңіз»; «ЖИ құралын пайдаланып, тақырыпқа қатысты тағы екі мысал табыңыз. Әр мысалдың дұрыстығын оқулықпен тексеріңіз». Қате үлгілер: «Оқушылар тұжырымдарды оқиды», «жалғандарын жазады», «мысалдар табады», «кестені толтырады», «сәйкестендіру жұмысын орындайды». Мұндай сөйлемдерді оқушыға бағытталған бұйрық райға ауыстыр. «Жұмыс түрі: жұптық жұмыс» — тек ұйымдастыру белгісі, ол тапсырма шартының орнына жүрмейді. ҚМЖ кестесінде әр кезеңде кемінде бір толық, нақты тапсырма шарты көрінсін. Ұзақ мәтін, таратпа материал, жауап кілті және ЖИ промпты қосымшаға шығарылсын; кестеде нақты қысқа шарт және «Толық тапсырма: 1-қосымша» сілтемесі қалсын.
+5. ТАПСЫРМА ФОРМАТТАРЫ ӘРТҮРЛІ БОЛСЫН: сабақта тақырыпқа сай кемінде 4 форматты қолданыңыз: 1) «Иә/Жоқ» — тұжырымдарды оқып, шын/жалғанын белгілеңіз және жалғандарын түзетіңіз; 2) сәйкестендіру — екі бағандағы терминдер мен анықтамаларды сызықпен қосыңыз; 3) бос орындарды толтыру — сөздер банкінен қажетті сөзді таңдап, сөйлемдегі бос орынға жазыңыз; 4) сурет/схема бойынша жұмыс — нысандарды белгілеңіз, нөмірлеңіз, топтастырыңыз немесе қорытынды жасаңыз; 5) ашық сұрақ/жағдаят — сұраққа толық жауап беріп, жауабыңызды дәлелдеңіз. Әр форматта тапсырманың өзі, қажетті дерек/тұжырым/терминдер/сурет сипаттамасы және жауапты қалай беру керегі толық жазылсын. Тек тапсырма атауларын тізбелемеңіз.
+6. Кемінде екі мазмұнды көрнекілік жаса және оларды stage ішіндегі visuals массивіне енгіз: тақырыпқа сай кесте, график, кезеңдік схема немесе суретпен жұмыс тапсырмасы. Схема/кесте тек әшекей емес, оқушы тапсырманы орындауға қолданатындай мазмұнды болсын; оның алдында/соңында не байқау керегін түсіндір. table — title, columns, rows; graph — title, xLabel, yLabel, data; diagram — title, steps. Суретке жалған URL ойлап таппа. Егер нақты сурет URL-і жоқ болса, оны «сурет сипаттамасы» деп белгіле де, мазмұнды схема арқылы алмастыр. Ойдан жасалған деректерді «үлгі деректер» деп белгіле.
+7. Сабаққа ЖИ-ді нақты кіріктір: құрал атауы, қолданылатын prompt, мұғалім/оқушы әрекеті, ЖИ жауабын тексеру әдісі және интернет/құрылғы болмағандағы балама. Толық ЖИ промптын appendices ішінде сақта.
+8. Қосымшалар міндетті түрде мазмұнды болсын. Ақпараттық/түсіндірмелі қосымша кемінде 200 сөзден тұрсын немесе оқушыға түсінікті сурет, схема, кезеңдер және олардың түсіндірмесімен толық берілсін. Оқушыға берілетін әр толық тапсырмада нұсқаулық, барлық сұрақ/мәлімет, жауап жазатын орын не кесте болсын. Бір сөйлемдік, мазмұны жұтаң қосымша жасама. Тақырыпты оқушы түсінетін тілмен түсіндір; анықтамаларға нақты мысалдар мен «неге?» деген түсіндірме қос.
+8. РЕФЛЕКСИЯ ТЕК ҮШІНШІ КЕЗЕҢДЕ (САБАҚ СОҢЫНДА) БОЛСЫН. Бірінші және екінші кезеңде reflection кілтін қоспа және рефлексия мәтінін жазба. Соңында дәл 3 қарапайым сұрақ немесе «Бір сөйлеммен аяқта» әдісі болсын. Сұрақтар сабақта орындалған нақты тапсырмаларды еске түсірсін: «Қай тапсырмада ...?», «Қай тапсырма қиын болды?», «Бүгін не үйрендің?». Рефлексияға график, диаграмма, кесте, визуал қоспа.
+10. НЕГІЗГІ ДЕСКРИПТОРЛАР: дәл 10 болсын (1-кезеңде 2, 2-кезеңде 6, 3-кезеңде 2), әрқайсысы 1 балл. Дескрипторларды бағалау өлшемі ретінде нақты әрекетті білдіретін қысқа тұжырым түрінде жазыңыз. Дескриптордың басында «Білім алушы» немесе «Оқушы» деген сөздерді ҚОЛДАНБАҢЫЗ. Мысалдар: «Экологиялық факторлар туралы тұжырымдардың дұрыстығын анықтайды»; «Терминдерді анықтамаларымен сәйкестендіреді»; «Қорытындысын деректермен дәлелдейді». Дескрипторда оқушыға арналған бұйрық райды қолданбаңыз. ЕБҚ дескрипторлары негізгі 10 балға қосылмайды.
+11. ҚАЛЫПТАСТЫРУШЫ БАҒАЛАУ: әр тапсырмадан кейін мұғалімнің қалай бағалайтынын көрсетіңіз. Әр кезеңдегі бағалау бағанында негізгі дескрипторлар кестесінің астына бағалау тәсілін жазыңыз; «Қалыптастырушы бағалау:» тақырыбын сайт өзі бір рет қосады, мәнінде бұл тіркесті қайталамаңыз. Тақырып пен тапсырмаға сәйкес нақты тәсілді таңдаңыз: «өзін-өзі бағалау — жауап кілтімен тексеру», «бірін-бірі бағалау — жұптар дескриптор бойынша тексереді», «мұғалімнің жедел кері байланысы — дұрыс жауапты атап, қатені түзетуге бағыт береді», «бағдаршам», «бас бармақ». Кім қалай қолданатынын бір сөйлеммен көрсетіңіз.
+12. ЕБҚ тапсырмалары ОҚУШЫ ӘРЕКЕТІ бағанында жеке рамкада көрсетілсін: «ЕБҚ оқушысына арналған тапсырма: ...» және оқушыға тікелей сыпайы бұйрық раймен жазылсын. ЕБҚ тапсырмасының рамкасында дескрипторлар кестесін қайталамаңыз. ЕБҚ дескрипторларын тек бағалау графасында, негізгі дескрипторлар мен қалыптастырушы бағалаудан кейін жеке кестемен беріңіз; әр дескриптордың баллы 1 болсын. ЕБҚ дескрипторлары негізгі сыныптың 10 балынан бөлек жеке есептеледі; ЕБҚ нұсқасының өзінде дәл 10 дескриптор болсын (1-кезеңде 2, 2-кезеңде 6, 3-кезеңде 2), әрқайсысы 1 балл. «ЕБҚ оқушыларына қолдау» бағанында тек қолдау түрлері мен тапсырманы қалай жеңілдеткені қалсын (қадамдық нұсқаулық, сөздер банкі, үлкейтілген сурет, қосымша уақыт, үлгі жауап т.б.); тапсырманың толық мәтіні мен дескрипторларын бұл бағанға қайталамаңыз.
+13. ${ebkInstruction}
 
 JSON ЖАУАБЫНЫҢ ҚҰРЫЛЫМЫ:
-- Жоғарғы деңгейде міндетті түрде lessonGoal, values, stages кілттері болсын.
+- Жоғарғы деңгейде lessonGoal, values, stages және appendices кілттері болсын. appendices — {title, content, stage} объектілерінің массиві.
 - stages — дәл үш объектіден тұратын массив.
-- Әр кезең объектісінде stage, teacher, student, descriptors, visuals, ebk, resources кілттері болсын.
-- ebk объектісінде support, task және descriptors кілттері болсын.
-- Үшінші кезең объектісінде reflection кілті де болсын.
+- Әр кезең объектісінде stage, teacher, student, descriptors, visuals, ebk, resources кілттері болсын; teacher және student кестеге арналған ықшам мәтін болсын. teacher өрісіне мұғалімнің нақты түсіндіруін, мысалын, негізгі ұғымға екпінін және тапсырманы жүргізу қадамдарын енгіз; тек «тапсырма береді/бақылайды» деп шектелме. Қажет болса teacherExplanation өрісін де қосуға болады, бірақ оның мазмұны teacher өрісінде де көрінсін.
+- Әр кезең объектісінде formativeAssessment кілтін қосыңыз: осы тапсырмадан кейін қолданылатын нақты қалыптастырушы бағалау тәсілі және өткізу тәртібі.
+- ЕБҚ режимі қосулы кезде ebk.task мәтінін student өрісіндегі жалпы сынып тапсырмасынан КЕЙІН бір ғана «ЕБҚ оқушысына арналған тапсырма» рамкасында көрсетіңіз. Егер student мәтінінің ішінде ЕБҚ тапсырмасы қайталанса, оны мәтіннен алып тастаңыз. ebk.descriptors тек бағалау графасында жеке 1 баллдық кесте ретінде көрсетілсін; ЕБҚ дескрипторларының жалпы саны 10 болсын және кезеңдерге 2+6+2 болып бөлінсін. ebk.support тек «ЕБҚ оқушыларына қолдау» бағанында қалсын.
+- Ұзақ тапсырмалар, оқушыға берілетін толық мәтіндер, ұзақ ресурс тізімдері, жауап кілттері және толық ЖИ промпттары appendices массивінде болсын; қысқа ресурстар кестеде қалсын. Егер appendices ішінде материал бар болса, кезеңнің student өрісінде тек қысқа нұсқаулық және қосымша нөміріне сілтеме жаз.
+- ЕБҚ режимі қосулы болса, ebk объектісінде support, task және descriptors кілттері болсын. ЕБҚ режимі өшірулі болса, ЕБҚ-ға қатысты мазмұн жасама; ebk бос объект болуы мүмкін. Сайт ЕБҚ бағанын тек режим қосылғанда көрсетеді.
+- Үшінші кезең объектісінде reflection кілті болсын; онда жоғарыдағыдай сабақ тапсырмаларына нақты байланысқан 2–3 қарапайым рефлексия сұрағы болсын.
 - descriptors — нақты тұжырымдардан тұратын массив; бос немесе көп нүктелі элементтер болмасын.
-- visuals — көрнекілік объектілерінің массиві. Кесте үшін бағандар мен жолдарды толтыр; график үшін нақты жапсырмалар мен сандық мәндер бер; схема үшін қадамдарды ретімен жаз.
+- visuals — көрнекілік объектілерінің массиві. Кесте үшін бағандар мен жолдарды толтыр; график үшін нақты жапсырмалар мен сандық мәндер бер; схема үшін қадамдарды ретімен жаз. Кемінде бір table/graph және бір diagram жасауға тырыс.
 
 ТЕХНИКАЛЫҚ ТАЛАП:
 - Тек бір жарамды JSON объектісін қайтар. Алғы сөз, түсіндірме және Markdown қоршауын жазба.
 - Барлық мәтіндік мәндер шынайы және толық болсын; бос орынбасарлар, «...», «…», «TODO» немесе мысал орнына қалдырылған жақшалар болмасын.
+- ҚАЙТАРАР АЛДЫНДА student өрістерін тексер: тапсырма шарттарында «оқушылар ...», «оқушы ... орындайды/жазады/табады/толтырады» сияқты үшінші жақтағы баяндау сөйлемдері қалмасын. Оларды міндетті түрде «оқыңыз/жазыңыз/табыңыз/толтырыңыз/сәйкестендіріңіз/түсіндіріңіз» түріндегі оқушыға тікелей бағытталған сыпайы бұйрық раймен түзет. «Жазады», «табады», «орындайды», «толтырады» сөздері тапсырма нұсқаулығында қолданылмасын.
 - JSON синтаксисінде қос тырнақшаларды қолдан, соңғы элементтен кейін артық үтір қойма.
 - Жауапты сайттағы «ҚМЖ құру» өрісіне тікелей қоюға болатындай етіп бер.`;
         }
@@ -794,11 +885,11 @@ JSON ЖАУАБЫНЫҢ ҚҰРЫЛЫМЫ:
             setAnswerStatus('', 'info');
             const p = currentTrialParams;
             if (!p) { setStatus('Форма деректері жоғалды. Қайталап бастаңыз.', 'error'); return; }
-            document.getElementById('outTopic').innerText = p.topic;
-            document.getElementById('outSubject').innerText = p.subject;
-            document.getElementById('outGrade').innerText = p.grade + '-сынып';
-            document.getElementById('outUnit').innerText = p.unit;
-            document.getElementById('outObjective').innerText = p.objective;
+            setTextIfPresent('outTopic', p.topic);
+            setTextIfPresent('outSubject', p.subject);
+            setTextIfPresent('outGrade', p.grade + '-сынып');
+            setTextIfPresent('outUnit', p.unit);
+            setTextIfPresent('outObjective', p.objective);
             try {
                 render(d);
                 setAnswerStatus('', 'info');
@@ -809,6 +900,30 @@ JSON ЖАУАБЫНЫҢ ҚҰРЫЛЫМЫ:
                 setStatus('ҚМЖ кестесін құру қатесі: ' + (e.message || 'белгісіз қате'), 'error');
             }
         }
+
+        // Explicit click binding for the manual AI flow (more reliable than inline onclick).
+        // Keep the button responsive and make any processing error visible inside the modal.
+        window.buildFromTrialAnswer = buildFromTrialAnswer;
+        document.getElementById('buildTrialBtn').addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const button = this;
+            if (button.dataset.processing === 'true') return;
+            button.dataset.processing = 'true';
+            button.textContent = 'ҚМЖ тексеріліп жатыр...';
+            button.disabled = true;
+            button.classList.add('opacity-70', 'cursor-wait');
+            try {
+                buildFromTrialAnswer();
+            } catch (error) {
+                setAnswerStatus('ҚМЖ құру кезінде қате шықты: ' + (error && error.message ? error.message : 'Белгісіз қате.'), 'error');
+            } finally {
+                button.dataset.processing = 'false';
+                button.disabled = false;
+                button.textContent = 'ҚМЖ құру';
+                button.classList.remove('opacity-70', 'cursor-wait');
+            }
+        });
 
         // Export Document to DOCX
         function exportToWord() {
