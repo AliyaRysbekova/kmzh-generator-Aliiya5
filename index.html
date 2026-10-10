@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ҚМЖ Генераторы — тіркелу және кіру</title>
+    <title>ҚМЖ Генераторы — жеке кабинет және генерация лимиті</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS: public publishable key only; no secret/service_role key is placed in the browser. -->
@@ -48,6 +48,7 @@
             </div>
             <div id="authControls" class="flex items-center gap-2 shrink-0">
                 <span id="authUserLabel" class="hidden max-w-[190px] truncate text-xs text-indigo-100" aria-live="polite"></span>
+                <span id="generationBalance" class="hidden rounded-lg bg-indigo-600 border border-indigo-400 px-2 py-1.5 text-xs text-white whitespace-nowrap" aria-live="polite"></span>
                 <button id="openAuthBtn" type="button" onclick="openAuthModal('login')" class="rounded-lg bg-white text-indigo-700 hover:bg-indigo-50 font-semibold text-xs sm:text-sm px-3 py-2 shadow-sm">Кіру / Тіркелу</button>
                 <button id="logoutBtn" type="button" onclick="logoutUser()" class="hidden rounded-lg border border-indigo-300 text-white hover:bg-indigo-600 font-semibold text-xs sm:text-sm px-3 py-2">Шығу</button>
             </div>
@@ -612,6 +613,17 @@
                 setStatus('Сервер мекенжайы бапталмаған. Әкімшіге хабарласыңыз.', 'error');
                 return;
             }
+            if (!supabaseAuthClient) {
+                setStatus('Supabase клиенті жүктелмеді. Бетті жаңартып көріңіз.', 'error');
+                return;
+            }
+            const { data: sessionInfo, error: sessionError } = await supabaseAuthClient.auth.getSession();
+            const accessToken = sessionInfo?.session?.access_token;
+            if (sessionError || !accessToken) {
+                setStatus('ҚМЖ құру үшін алдымен аккаунтқа кіріңіз.', 'error');
+                openAuthModal('login');
+                return;
+            }
             if (!TURNSTILE_SITE_KEY || TURNSTILE_SITE_KEY.includes('PASTE_')) {
                 setStatus('Қауіпсіздік тексеруі әлі бапталмаған. Turnstile Site Key орнатылғаннан кейін генерация жұмыс істейді.', 'error');
                 return;
@@ -626,11 +638,18 @@
             try {
                 const response = await fetch(API_ENDPOINT, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
                     body: JSON.stringify({ ...p, turnstileToken })
                 });
                 const payload = await response.json().catch(() => ({}));
-                if (!response.ok) throw new Error(payload.error || `Сервер қатесі (${response.status}).`);
+                if (payload.balance) renderGenerationBalance(payload.balance);
+                if (!response.ok) {
+                    if (payload.limitReached) {
+                        setStatus(payload.error || 'Тегін генерациялар аяқталды.', 'error');
+                        return;
+                    }
+                    throw new Error(payload.error || `Сервер қатесі (${response.status}).`);
+                }
 
                 const d = payload.plan || payload;
                 if (!d || !Array.isArray(d.stages) || d.stages.length !== 3) {
@@ -656,6 +675,7 @@
                 setLoading(false);
                 turnstileToken = '';
                 if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
+                refreshGenerationBalance();
             }
         }
 
@@ -723,6 +743,58 @@
             el.textContent = message;
         }
 
+        let generationBalanceRequestInFlight = false;
+
+        function renderGenerationBalance(balance) {
+            const el = document.getElementById('generationBalance');
+            if (!el) return;
+            if (!currentAuthUser || !balance || balance.ok === false) {
+                el.classList.add('hidden');
+                el.textContent = '';
+                return;
+            }
+            const free = Number(balance.free_remaining || 0);
+            const paid = Number(balance.paid_remaining || 0);
+            el.textContent = `Тегін: ${free} · Пакет: ${paid}`;
+            el.title = `Қалған ҚМЖ: ${Number(balance.total_remaining ?? (free + paid))}`;
+            el.classList.remove('hidden');
+        }
+
+        async function refreshGenerationBalance() {
+            if (generationBalanceRequestInFlight) return;
+            const el = document.getElementById('generationBalance');
+            if (!supabaseAuthClient || !currentAuthUser) {
+                if (el) { el.classList.add('hidden'); el.textContent = ''; }
+                return;
+            }
+            generationBalanceRequestInFlight = true;
+            try {
+                const { data, error } = await supabaseAuthClient.auth.getSession();
+                if (error || !data?.session?.access_token) { renderGenerationBalance(null); return; }
+                const response = await fetch(`${API_ENDPOINT}?action=balance`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${data.session.access_token}` }
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (response.ok && payload.balance) renderGenerationBalance(payload.balance);
+                else {
+                    if (el) {
+                        el.textContent = 'Баланс тексерілмеді';
+                        el.title = payload.error || 'Баланс қызметі қолжетімсіз';
+                        el.classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                if (el) {
+                    el.textContent = 'Баланс тексерілмеді';
+                    el.title = 'Сервермен байланыс болмады';
+                    el.classList.remove('hidden');
+                }
+            } finally {
+                generationBalanceRequestInFlight = false;
+            }
+        }
+
         function renderAuthControls() {
             const openBtn = document.getElementById('openAuthBtn');
             const logoutBtn = document.getElementById('logoutBtn');
@@ -741,6 +813,7 @@
                 userLabel.textContent = '';
                 userLabel.title = '';
             }
+            refreshGenerationBalance();
         }
 
         function updateAuthDialogLayout() {
