@@ -283,31 +283,31 @@
                 <table id="lessonInfoTable" class="w-full text-xs text-left" style="border-collapse:collapse; margin-top:0;">
                     <tbody>
                         <tr>
-                            <td class="font-bold bg-slate-50 p-2 w-1/4">Сабақтың тақырыбы:</td>
+                            <td id="labelOutTopic" class="font-bold bg-slate-50 p-2 w-1/4">Сабақтың тақырыбы:</td>
                             <td id="outTopic" class="p-2" colspan="3">-</td>
                         </tr>
                         <tr>
-                            <td class="font-bold bg-slate-50 p-2 w-1/4">Оқу бағдарламасына сәйкес оқыту мақсаты: (оқу мақсаты)</td>
+                            <td id="labelOutObjective" class="font-bold bg-slate-50 p-2 w-1/4">Оқу бағдарламасына сәйкес оқыту мақсаты: (оқу мақсаты)</td>
                             <td id="outObjective" class="p-2" colspan="3">-</td>
                         </tr>
                         <tr>
-                            <td class="font-bold bg-slate-50 p-2">Блум таксономиясы бойынша ойлау деңгейі:</td>
+                            <td id="labelOutThinking" class="font-bold bg-slate-50 p-2">Блум таксономиясы бойынша ойлау деңгейі:</td>
                             <td id="outThinkingLevels" class="p-2" colspan="3">-</td>
                         </tr>
                         <tr>
-                            <td class="font-bold bg-slate-50 p-2">Сабақтың мақсаты:</td>
+                            <td id="labelOutGoal" class="font-bold bg-slate-50 p-2">Сабақтың мақсаты:</td>
                             <td id="outLessonGoal" class="p-2" colspan="3">-</td>
                         </tr>
                         <tr>
-                            <td class="font-bold bg-slate-50 p-2">Құндылықтар:</td>
+                            <td id="labelOutValues" class="font-bold bg-slate-50 p-2">Құндылықтар:</td>
                             <td id="outValues" class="p-2" colspan="3">-</td>
                         </tr>
                         <tr>
-                            <td class="font-bold bg-slate-50 p-2">Тәрбиелік мақсат:</td>
+                            <td id="labelOutEducational" class="font-bold bg-slate-50 p-2">Тәрбиелік мақсат:</td>
                             <td id="outEducationalGoal" class="p-2" colspan="3">-</td>
                         </tr>
                         <tr id="weeklyQuoteRow" class="hidden">
-                            <td class="font-bold bg-slate-50 p-2">Аптаның дәйексөзі:</td>
+                            <td id="labelOutQuote" class="font-bold bg-slate-50 p-2">Аптаның дәйексөзі:</td>
                             <td id="outWeeklyQuote" class="p-2" colspan="3"></td>
                         </tr>
                     </tbody>
@@ -1012,8 +1012,8 @@
         function applyOutputLanguageLabels() {
             const lang = document.getElementById('outputLanguage')?.value || 'kk';
             const L = PLAN_LABELS[lang] || PLAN_LABELS.kk;
-            const ids = {outTopic:L.topic,outObjective:L.objective,outThinkingLevels:L.thinking,outLessonGoal:L.goal,outValues:L.values,outEducationalGoal:L.educational,outWeeklyQuote:L.quote};
-            Object.entries(ids).forEach(([id, value]) => { const el=document.getElementById(id); if(el && el.parentElement?.previousElementSibling) el.parentElement.previousElementSibling.textContent=value; });
+            const outputLabels = {labelOutTopic:L.topic,labelOutObjective:L.objective,labelOutThinking:L.thinking,labelOutGoal:L.goal,labelOutValues:L.values,labelOutEducational:L.educational,labelOutQuote:L.quote};
+            Object.entries(outputLabels).forEach(([id, value]) => { const el=document.getElementById(id); if(el) el.textContent=value; });
             const staticLabels = {labelOrgName:L.orgName,labelSubject:L.subjectLabel,labelUnit:L.unitLabel,labelTeacherName:L.teacherName,labelClass:L.classLabel,labelAttending:L.attending,labelAbsent:L.absent,labelStage:L.stage,labelTeacherActions:L.teacher,labelStudentActions:L.student,labelAssessment:L.assessment,labelEbk:L.ebk,labelResources:L.resources};
             Object.entries(staticLabels).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
             const appTitle=document.querySelector('#lessonAppendices h3'); if(appTitle) appTitle.textContent=L.appendices;
