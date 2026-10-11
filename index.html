@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ҚМЖ Generator — әдістемелік көмекші V37</title>
-    <!-- V37: adds 15 cross-curricular AI/digital tool checkboxes and sends selections to the Worker. V36 formatting retained. -->
+    <title>ҚМЖ Generator — әдістемелік көмекші V43</title>
+    <!-- V43: enforces explicit task title/condition display and always formats separate ЕБҚ task + descriptors. -->
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS: public publishable key only; no secret/service_role key is placed in the browser. -->
@@ -461,6 +461,25 @@
             return out.join('\n');
         }
 
+        // Guarantee the visible ЕБҚ block is a numbered, actionable task rather than a vague activity label.
+        function ensureEbkTaskStructure(raw, stageIndex) {
+            let value = textOf(raw).replace(/\r/g, '').trim();
+            if (!value) return '';
+            if (!/ЕБҚ\s+\d+[-.)]?\s*тапсырма|ЕБҚ\s+тапсырма/iu.test(value)) {
+                value = `ЕБҚ ${stageIndex + 1}-тапсырма. Бейімделген тапсырма\n${value}`;
+            }
+            if (!/ЖҰМЫС\s+ФОРМАСЫ\s*:/iu.test(value)) {
+                value = value.replace(/(ЕБҚ\s+\d+[-.)]?\s*тапсырма[^\n]*)/iu, '$1\nЖҰМЫС ФОРМАСЫ: ЖЕКЕ ЖҰМЫС');
+            }
+            if (!/Тапсырма\s+шарты\s*:/iu.test(value)) {
+                const lines = value.split('\n');
+                const idx = lines.findIndex(line => /ЖҰМЫС\s+ФОРМАСЫ\s*:/iu.test(line));
+                lines.splice(idx >= 0 ? idx + 1 : 1, 0, 'Тапсырма шарты:');
+                value = lines.join('\n');
+            }
+            return value;
+        }
+
         // Format teacher/student actions as separate visual blocks; emphasize numbered tasks, work forms, and AI activity.
         function renderPlanActionText(raw) {
             let value = textOf(raw).replace(/\r/g, '').trim();
@@ -722,8 +741,9 @@
                 const eb = `Қолдау түрлері: ${support || 'Қадамдық нұсқаулық, қысқа әрі нақты нұсқаулар'}\nТапсырманы бейімдеу: ${textOf(getField(e, ['adaptation','scaffolding','бейімдеу','жеңілдету'])) || 'Тапсырманы шағын қадамдарға бөлу, тірек сөздер мен үлгі ұсыну'}`;
                 // ЕБҚ тапсырмасы тек бір рет — жалпы тапсырмадан кейінгі жеке рамкада беріледі.
                 // ЕБҚ дескрипторлары оқушы әрекетінде қайталанбайды; олар бағалау бағанына шығарылады.
-                const ebTaskBox = ebkOn && ebkTask
-                    ? `<div class="ebk-task-box"><strong>ЕБҚ оқушысына арналған тапсырма</strong><div class="mt-1">${nl(ebkTask)}</div></div>`
+                const ebkTaskStructured = ebkOn ? ensureEbkTaskStructure(ebkTask || `Тапсырма шарты: «${textOf(getField(d, ['topic','тақырып'])) || 'сабақ тақырыбы'}» бойынша негізгі ақпаратты тірек сөзге сүйеніп анықтайды.`, index) : '';
+                const ebTaskBox = ebkOn
+                    ? `<div class="ebk-task-box"><strong>ЕБҚ оқушысына арналған тапсырма</strong><div class="mt-1">${renderPlanActionText(ebkTaskStructured)}</div></div>`
                     : '';
                 const ebDescriptorsHtml = ebkOn && ebDescriptors.length
                     ? `<div class="mt-3"><strong class="text-emerald-800">ЕБҚ дескрипторлары</strong><table class="descriptor-table w-full text-xs mt-1"><thead><tr><th>Дескриптор</th><th style="width:45px;text-align:center;">Балл</th></tr></thead><tbody>${ebDescriptors.map(x=>`<tr><td>${esc(cleanDescriptor(x))}</td><td style="text-align:center;font-weight:700;">1</td></tr>`).join('')}</tbody></table></div>`
