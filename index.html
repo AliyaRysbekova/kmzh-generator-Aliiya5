@@ -36,7 +36,7 @@
         .plan-action-list { line-height: 1.55; overflow-wrap: anywhere; }
         .plan-action-block { margin: 0 0 10px 0; padding: 0 0 8px 0; border-bottom: 1px solid #e2e8f0; }
         .plan-action-block:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
-        .work-form-label { display: inline-block; margin: 1px 3px 4px 0; padding: 3px 8px; border-radius: 6px; background: #e0e7ff; color: #312e81; font-size: 13px; line-height: 1.35; font-weight: 900; letter-spacing: .025em; }
+        .work-form-label { display: inline; margin: 0; padding: 0; border-radius: 0; background: transparent; color: inherit; font-size: inherit; line-height: inherit; font-weight: 700; font-style: italic; letter-spacing: normal; }
         .task-number-label { display: inline-block; margin: 2px 0 5px; padding: 3px 8px; border-radius: 6px; background: #fef3c7; color: #92400e; font-size: 14px; line-height: 1.4; font-weight: 900; }
         .task-condition-label { color: #334155; font-weight: 800; }
         .ai-work-box { margin: 9px 0 11px; padding: 11px 12px; border: 2px solid #7c3aed; border-left-width: 6px; border-radius: 10px; background: #f5f3ff; color: #312e81; line-height: 1.55; break-inside: avoid; }
@@ -436,25 +436,30 @@
             const lines = textOf(raw).replace(/\r/g, '').split('\n');
             const out = [];
             let taskNo = 0;
-            let explicitTaskAwaitingForm = false;
+            let hasHeading = false;
             const isTaskHeading = line => /^\s*(?:\d+\s*[-.)]?\s*тапсырма\b|тапсырма\s*№?\s*\d+)/iu.test(line);
             const isWorkForm = line => /^\s*ЖҰМЫС\s+ФОРМАСЫ\s*:/iu.test(line);
             for (const line of lines) {
                 if (isTaskHeading(line)) {
-                    const n = line.match(/^\s*(\d+)/u);
-                    taskNo = n ? Math.max(taskNo, Number(n[1])) : taskNo + 1;
-                    explicitTaskAwaitingForm = true;
-                    out.push(line);
+                    // Preserve one heading per task. Duplicate consecutive labels are removed.
+                    const previous = [...out].reverse().find(x => x.trim());
+                    if (previous && isTaskHeading(previous)) continue;
+                    taskNo += 1;
+                    out.push(line.replace(/^\s*(?:\d+\s*[-.)]?\s*тапсырма|тапсырма\s*№?\s*\d+)/iu, `${taskNo}-тапсырма`));
+                    hasHeading = true;
                     continue;
                 }
                 if (isWorkForm(line)) {
-                    if (!explicitTaskAwaitingForm) {
+                    if (!hasHeading) {
                         taskNo += 1;
                         out.push(`${taskNo}-тапсырма.`);
                     }
+                    hasHeading = true;
                     out.push(line);
-                    explicitTaskAwaitingForm = false;
                     continue;
+                }
+                if (line.trim() && !/^\s*(?:Әдіс|Тапсырма шарты|Шарт)\s*:/iu.test(line)) {
+                    // Keep the heading active until the next explicitly numbered task.
                 }
                 out.push(line);
             }
