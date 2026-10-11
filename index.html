@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ҚМЖ Generator — әдістемелік көмекші V35</title>
-    <!-- V35: large uppercase work-form labels, visible AI WORK box, separated action paragraphs. -->
+    <!-- V36: large bold AI WORK heading, student action column renamed, separated action paragraphs. -->
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS: public publishable key only; no secret/service_role key is placed in the browser. -->
@@ -38,7 +38,8 @@
         .plan-action-block:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
         .work-form-label { display: inline-block; margin: 1px 3px 4px 0; padding: 3px 8px; border-radius: 6px; background: #e0e7ff; color: #312e81; font-size: 13px; line-height: 1.35; font-weight: 900; letter-spacing: .025em; }
         .ai-work-box { margin: 9px 0 11px; padding: 11px 12px; border: 2px solid #7c3aed; border-left-width: 6px; border-radius: 10px; background: #f5f3ff; color: #312e81; line-height: 1.55; break-inside: avoid; }
-        .ai-work-heading { font-size: 17px; font-weight: 900; letter-spacing: .04em; margin: 0 0 6px; color: #5b21b6; }
+        .ai-work-heading { display: block; font-size: 24px; font-weight: 950; letter-spacing: .06em; line-height: 1.2; margin: 0 0 9px; color: #5b21b6; text-transform: uppercase; }
+        @media (max-width: 640px) { .ai-work-heading { font-size: 22px; } }
         .ai-work-body > .plan-action-block { border-bottom-color: #ddd6fe; }
         @media print { .work-form-label { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .ai-work-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style>
@@ -227,7 +228,7 @@
                 <div class="overflow-x-auto">
                     <table id="kmzhTable" class="w-full text-xs text-left">
                         <thead><tr class="bg-slate-100 text-xs">
- <th class="p-2 border" style="width:8%">Кезең / Уақыт</th><th class="p-2 border" style="width:17%">Мұғалім әрекеті</th><th class="p-2 border" style="width:31%">Оқушы әрекеті және тапсырма</th><th class="p-2 border" style="width:20%">Бағалау</th><th class="p-2 border ebk-col" id="ebkColumnHeader" style="width:16%" hidden>ЕБҚ оқушыларына қолдау</th><th class="p-2 border" style="width:8%">Ресурстар</th></tr></thead>
+ <th class="p-2 border" style="width:8%">Кезең / Уақыт</th><th class="p-2 border" style="width:17%">Мұғалім әрекеті</th><th class="p-2 border" style="width:31%">Оқушы әрекеті</th><th class="p-2 border" style="width:20%">Бағалау</th><th class="p-2 border ebk-col" id="ebkColumnHeader" style="width:16%" hidden>ЕБҚ оқушыларына қолдау</th><th class="p-2 border" style="width:8%">Ресурстар</th></tr></thead>
                         <tbody id="kmzhTableBody">
                             <tr>
                                 <td colspan="6" class="p-6 text-center text-slate-400 italic">
