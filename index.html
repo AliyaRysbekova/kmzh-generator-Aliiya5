@@ -432,10 +432,10 @@
         }
 
         // Number assignment blocks and format their task label, work form, and condition for quick scanning.
-        function ensureStudentTaskNumbers(raw) {
+        function ensureStudentTaskNumbers(raw, stageOffset = 0) {
             const lines = textOf(raw).replace(/\r/g, '').split('\n');
             const out = [];
-            let taskNo = 0;
+            let taskNo = Math.max(0, Number(stageOffset) || 0);
             let hasHeading = false;
             const isTaskHeading = line => /^\s*(?:\d+\s*[-.)]?\s*тапсырма\b|тапсырма\s*№?\s*\d+)/iu.test(line);
             const isWorkForm = line => /^\s*ЖҰМЫС\s+ФОРМАСЫ\s*:/iu.test(line);
@@ -763,7 +763,7 @@
                 let studentShort = textOf(getField(s, ['studentSummary','student_summary','қысқашаТапсырма','taskSummary'])) || studentFull;
                 // aiWork has its own prominent panel; remove any repeated panel/content embedded in studentSummary.
                 if (aiWork) studentShort = removeEmbeddedAiWork(studentShort);
-                studentShort = ensureStudentTaskNumbers(studentShort);
+                studentShort = ensureStudentTaskNumbers(studentShort, index);
                 // Show the curated summary first so the main teaching actions and AI reference are not cut off.
                 // Keep the full teacher script in the appendix when it is long.
                 const teacherSummary = textOf(getField(s, ['teacherSummary','teacher_summary','қысқашаМұғалімӘрекеті']));
