@@ -1106,12 +1106,12 @@
 
                 setTextIfPresent('outTopic', textOf(getField(d, ['topic','translatedTopic'])) || p.topic);
                 setTextIfPresent('outSubject', textOf(getField(d, ['subject','translatedSubject'])) || p.subject);
-                setTextIfPresent('outGrade', p.grade + '-сынып');
+                setTextIfPresent('outGrade', p.outputLanguage === 'ru' ? p.grade + '-й класс' : p.outputLanguage === 'en' ? 'Grade ' + p.grade : p.grade + '-сынып');
                 setTextIfPresent('outUnit', textOf(getField(d, ['unit','translatedUnit'])) || p.unit);
                 setTextIfPresent('outObjective', textOf(getField(d, ['objective','translatedObjective'])) || p.objective);
-                setTextIfPresent('outThinkingLevels', textOf(getField(d, ['thinkingLevelsUsed','thinking_levels_used'])) || (p.thinkingLevels.length ? p.thinkingLevels.join(', ') : 'Оқу мақсатына сай автоматты түрде таңдалды'));
+                setTextIfPresent('outThinkingLevels', textOf(getField(d, ['thinkingLevelsUsed','thinking_levels_used'])) || (p.thinkingLevels.length ? p.thinkingLevels.join(', ') : (p.outputLanguage === 'ru' ? 'Выбраны автоматически в соответствии с целью обучения' : p.outputLanguage === 'en' ? 'Selected automatically based on the learning objective' : 'Оқу мақсатына сай автоматты түрде таңдалды')));
                 render(d);
-                setStatus('ҚМЖ дайын! Кестедегі мәтінді қажет болса өңдеп, Word немесе PDF түрінде сақтаңыз.', 'success');
+                setStatus(p.outputLanguage === 'ru' ? 'План урока готов! При необходимости отредактируйте таблицу и сохраните в Word или PDF.' : p.outputLanguage === 'en' ? 'Lesson plan is ready! Edit the table if needed and save as Word or PDF.' : 'ҚМЖ дайын! Кестедегі мәтінді қажет болса өңдеп, Word немесе PDF түрінде сақтаңыз.', 'success');
                 document.getElementById('kmzhContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
             } catch (error) {
                 const message = error && error.message ? error.message : 'Белгісіз қате.';
