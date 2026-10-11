@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ҚМЖ Generator — әдістемелік көмекші V34</title>
-    <!-- V34: explicit work forms, visible AI integration, varied lesson designs, values and optional weekly quote. Single paid package retained. -->
+    <title>ҚМЖ Generator — әдістемелік көмекші V35</title>
+    <!-- V35: large uppercase work-form labels, visible AI WORK box, separated action paragraphs. -->
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS: public publishable key only; no secret/service_role key is placed in the browser. -->
@@ -33,6 +33,14 @@
         .ebk-task-box > strong { color: #92400e; }
         .formative-assessment { margin-top: 10px; padding: 8px; border: 1px solid #86efac; border-radius: 8px; background: #f0fdf4; font-size: 11px; line-height: 1.4; white-space: normal; }
         .formative-assessment strong { color: #166534; display: block; margin-bottom: 3px; }
+        .plan-action-list { line-height: 1.55; overflow-wrap: anywhere; }
+        .plan-action-block { margin: 0 0 10px 0; padding: 0 0 8px 0; border-bottom: 1px solid #e2e8f0; }
+        .plan-action-block:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
+        .work-form-label { display: inline-block; margin: 1px 3px 4px 0; padding: 3px 8px; border-radius: 6px; background: #e0e7ff; color: #312e81; font-size: 13px; line-height: 1.35; font-weight: 900; letter-spacing: .025em; }
+        .ai-work-box { margin: 9px 0 11px; padding: 11px 12px; border: 2px solid #7c3aed; border-left-width: 6px; border-radius: 10px; background: #f5f3ff; color: #312e81; line-height: 1.55; break-inside: avoid; }
+        .ai-work-heading { font-size: 17px; font-weight: 900; letter-spacing: .04em; margin: 0 0 6px; color: #5b21b6; }
+        .ai-work-body > .plan-action-block { border-bottom-color: #ddd6fe; }
+        @media print { .work-form-label { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .ai-work-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
@@ -319,6 +327,47 @@
  <script>
         const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const nl = s => esc(s).replace(/\n/g, '<br>');
+
+        // Format teacher/student actions as separate visual blocks; emphasize forms and AI activity.
+        function renderPlanActionText(raw) {
+            let value = textOf(raw).replace(/\r/g, '').trim();
+            if (!value) return '-';
+            // Recover paragraph breaks even if the model returned a single long paragraph.
+            value = value
+                .replace(/(?<!\n)(?=(?:\d+\s*[.)-]?\s*(?:тапсырма|кезең)\b))/giu, '\n\n')
+                .replace(/(?<!\n)(?=(?:Жұмыс\s+формасы\s*:|(?:ЖЕКЕ|ЖҰПТЫҚ|ТОПТЫҚ|ФРОНТАЛЬДЫҚ)\s+ЖҰМЫС\b))/giu, '\n\n')
+                .replace(/(?<!\n)(?=(?:ЖИ\s+(?:ЖҰМЫС|КІРІКТІРУ)\s*:|Жасанды\s+интеллектпен\s+жұмыс\s*:))/giu, '\n\n')
+                .replace(/([.!?])\s+(?:(?:Содан\s+кейін|Одан\s+кейін)\s+)?(?=(?:Мұғалім\b|Оқушылар?\b|Соңында\b|Бірінші\b|Келесі\b|\d{1,2}\s*[–-]\s*\d{1,2}\s*(?:минутта|минут|мин\b)))/gu, '$1\n\n');
+            const blocks = value.split(/\n\s*\n|\n/).map(x => x.trim()).filter(Boolean);
+            if (!blocks.length) return '-';
+            const renderInline = line => {
+                const pattern = /(Жұмыс\s+формасы\s*:\s*)(Жеке\s+жұмыс|Жұптық\s+жұмыс|Топтық\s+жұмыс|Фронтальды\s+жұмыс)|(Жеке\s+жұмыс|Жұптық\s+жұмыс|Топтық\s+жұмыс|Фронтальды\s+жұмыс)/giu;
+                let out = '', last = 0, match;
+                while ((match = pattern.exec(line)) !== null) {
+                    out += esc(line.slice(last, match.index));
+                    const label = match[1] ? `${match[1].toUpperCase()} ` : '';
+                    const form = (match[2] || match[3] || '').toUpperCase();
+                    out += `<span class="work-form-label">${esc(label + form)}</span>`;
+                    last = match.index + match[0].length;
+                }
+                out += esc(line.slice(last));
+                return out;
+            };
+            return `<div class="plan-action-list">${blocks.map(line => {
+                const aiMatch = line.match(/^(?:ЖИ\s+(?:ЖҰМЫС|КІРІКТІРУ)|Жасанды\s+интеллектпен\s+жұмыс)\s*[:—-]?\s*/iu);
+                if (aiMatch) {
+                    const body = line.slice(aiMatch[0].length).trim();
+                    return `<section class="ai-work-box"><div class="ai-work-heading">ЖИ ЖҰМЫС</div><div class="ai-work-body">${renderInline(body)}</div></section>`;
+                }
+                return `<div class="plan-action-block">${renderInline(line)}</div>`;
+            }).join('')}</div>`;
+        }
+
+        function renderAiWorkBox(raw) {
+            const body = textOf(raw).trim();
+            if (!body) return '';
+            return `<section class="ai-work-box"><div class="ai-work-heading">ЖИ ЖҰМЫС</div><div class="ai-work-body">${renderPlanActionText(body)}</div></section>`;
+        }
         // Safe setter: the printable ҚМЖ header no longer contains redundant subject/grade/unit output fields.
         // Keep older update calls from failing when an optional element is not present.
         function setTextIfPresent(id, value) {
@@ -511,6 +560,7 @@
                 const resourcesFull = textOf(getField(s, ['resources','resource','ресурстар']));
                 const taskDetails = textOf(getField(s, ['taskDetails','fullTask','full_task','тапсырмаМәтіні','толықТапсырма']));
                 const promptDetails = textOf(getField(s, ['aiPrompt','prompt','ЖИпромпты','promptText']));
+                const aiWork = textOf(getField(s, ['aiWork','ai_work','aiActivity','ai_activity','ЖИжұмыс','ЖИ жұмысы']));
                 const answerKey = textOf(getField(s, ['answerKey','answers','expectedAnswers','жауапКілті','күтілетінЖауап']));
                 const teacherPrompt = textOf(getField(s, ['teacherPrompt','teacher_prompt']));
                 const descriptors = getMainDescriptors(s);
@@ -538,9 +588,10 @@
                 const visualHtml = renderVisuals(visuals);
                 // Keep the schedule compact; full instructions and prompts go into appendices.
                 const studentShort = textOf(getField(s, ['studentSummary','student_summary','қысқашаТапсырма','taskSummary'])) || studentFull;
-                // Keep the detailed teacher script visible in the main plan. Prefer the full field;
-                // teacherSummary is a fallback for older model responses only.
-                const teacherShort = teacherFull || textOf(getField(s, ['teacherSummary','teacher_summary','қысқашаМұғалімӘрекеті']));
+                // Show the curated summary first so the main teaching actions and AI reference are not cut off.
+                // Keep the full teacher script in the appendix when it is long.
+                const teacherSummary = textOf(getField(s, ['teacherSummary','teacher_summary','қысқашаМұғалімӘрекеті']));
+                const teacherShort = teacherSummary || teacherFull;
                 const shortText = (txt, max=360) => txt.length > max ? txt.slice(0,max).trim() + '… (толық нұсқасы қосымшада)' : txt;
                 const visualsInCell = visualHtml ? `<div class="visuals-in-plan">${visualHtml}</div>` : '';
                 const reflectionPrompts = [
@@ -553,7 +604,8 @@
                 const reflectionHtml = index === 2
                     ? `<div class="mt-2 rounded-lg bg-violet-50 border border-violet-200 p-2"><strong class="text-violet-800">Рефлексия (сабақ соңында):</strong><div class="mt-1">${nl(shortText(reflectionText,420))}</div></div>`
                     : '';
-                const stu = `<div class="task-content">${nl(shortText(studentShort || '-',650))}</div>${visualsInCell}${ebTaskBox}${reflectionHtml}`;
+                const aiWorkBox = renderAiWorkBox(aiWork);
+                const stu = `<div class="task-content">${renderPlanActionText(shortText(studentShort || '-',850))}</div>${aiWorkBox}${visualsInCell}${ebTaskBox}${reflectionHtml}`;
                 if (taskDetails) addAppendix(`${stageName}: тапсырманың толық мәтіні`, taskDetails, stageName);
                 // If the main student activity is long, preserve the full original in the appendix.
                 if (studentFull.length > 420 && studentFull !== studentShort) addAppendix(`${stageName}: оқушыға арналған толық нұсқаулық`, studentFull, stageName);
@@ -568,7 +620,7 @@
                 const c = (t, x='') => `<td class="p-2 align-top border-r ${x}" contenteditable="true">${nl(t || '')}</td>`;
                 const tr = document.createElement('tr'); tr.className='border-b';
                 tr.innerHTML = `<td class="p-2 align-top font-bold text-indigo-900 border-r bg-slate-50">${esc(stageName)}</td>` +
-                    c(shortText(teacherShort || '-',700)) +
+                    `<td class="p-2 align-top border-r" contenteditable="true">${renderPlanActionText(shortText(teacherShort || '-',850))}</td>` +
                     `<td class="p-2 align-top border-r task-content" contenteditable="true">${stu || '-'}</td>` +
                     `<td class="p-2 align-top border-r bg-amber-50/30" contenteditable="true">${ds || '-'}<div class="formative-assessment"><strong>Қалыптастырушы бағалау:</strong><div>${nl(formative || 'Мұғалім жауаптарды дескрипторлар бойынша тексеріп, дұрыс жауапты атап, қатені түзетуге қысқа кері байланыс береді.')}</div></div>${ebDescriptorsHtml}</td>` +
                     (ebkOn ? c(eb, 'ebk-col bg-emerald-50/30') : '') +
