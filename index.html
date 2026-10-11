@@ -111,6 +111,16 @@
                 <input type="text" id="topic" placeholder="Мысалы: Нәруыздың құрылымы мен қызметі" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
+            <div class="rounded-xl border border-sky-200 bg-sky-50/70 p-3 space-y-2">
+                <label for="outputLanguage" class="block text-xs font-semibold text-sky-950 mb-1">Тіл ҚМЖ / Lesson language</label>
+                <select id="outputLanguage" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    <option value="kk" selected>Қазақ тілі</option>
+                    <option value="ru">Русский язык</option>
+                    <option value="en">English</option>
+                </select>
+                <p class="text-xs text-sky-900">Таңдалған тіл сабақтың барлық мазмұнына қолданылады: тапсырмалар, жұмыс формалары, мұғалім/оқушы әрекеттері, дескрипторлар, бағалау, ЕБҚ қолдауы және қосымшалар.</p>
+            </div>
+
             <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 space-y-2">
                 <label for="lessonType" class="block text-xs font-semibold text-slate-700 mb-1">Жалпы сабақ форматы</label>
                 <select id="lessonType" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
@@ -507,7 +517,7 @@
         function renderAiWorkBox(raw) {
             const body = textOf(raw).trim();
             if (!body) return '';
-            return `<section class="ai-work-box"><div class="ai-work-heading">ЖИ ЖҰМЫС</div><div class="ai-work-body">${renderPlanActionText(body)}</div></section>`;
+            return `<section class="ai-work-box"><div class="ai-work-heading">${getPlanLabel('aiWork')}</div><div class="ai-work-body">${renderPlanActionText(body)}</div></section>`;
         }
         // Safe setter: the printable ҚМЖ header no longer contains redundant subject/grade/unit output fields.
         // Keep older update calls from failing when an optional element is not present.
@@ -713,7 +723,7 @@
                 const teacherPrompt = textOf(getField(s, ['teacherPrompt','teacher_prompt']));
                 const descriptors = getMainDescriptors(s);
                 const descriptorRows = descriptors.map(x => { const txt=cleanDescriptor(x); if(!txt) return ''; n++; return `<tr><td>${esc(txt)}</td><td style="text-align:center;width:45px;font-weight:700;">1</td></tr>`; }).filter(Boolean).join('');
-                const ds = descriptorRows ? `<table class="descriptor-table w-full text-xs"><thead><tr><th>Дескриптор</th><th style="width:45px;text-align:center;">Балл</th></tr></thead><tbody>${descriptorRows}</tbody></table>` : '-';
+                const ds = descriptorRows ? `<table class="descriptor-table w-full text-xs"><thead><tr><th>${getPlanLabel('descriptor')}</th><th style="width:45px;text-align:center;">${getPlanLabel('points')}</th></tr></thead><tbody>${descriptorRows}</tbody></table>` : '-';
                 const support = textOf(getField(e, ['support','қолдау','supportType','supportTypes']));
                 const ebkTask = textOf(getField(e, ['task','ebkTask','жеңілдетілгенТапсырма','simplifiedTask']));
                 const ebDescriptors = normalizeArray(getField(e, ['descriptors','descriptor','дескрипторлар']));
@@ -723,10 +733,10 @@
                 // ЕБҚ тапсырмасы тек бір рет — жалпы тапсырмадан кейінгі жеке рамкада беріледі.
                 // ЕБҚ дескрипторлары оқушы әрекетінде қайталанбайды; олар бағалау бағанына шығарылады.
                 const ebTaskBox = ebkOn && ebkTask
-                    ? `<div class="ebk-task-box"><strong>ЕБҚ оқушысына арналған тапсырма</strong><div class="mt-1">${nl(ebkTask)}</div></div>`
+                    ? `<div class="ebk-task-box"><strong>${getPlanLabel('ebkTask')}</strong><div class="mt-1">${nl(ebkTask)}</div></div>`
                     : '';
                 const ebDescriptorsHtml = ebkOn && ebDescriptors.length
-                    ? `<div class="mt-3"><strong class="text-emerald-800">ЕБҚ дескрипторлары</strong><table class="descriptor-table w-full text-xs mt-1"><thead><tr><th>Дескриптор</th><th style="width:45px;text-align:center;">Балл</th></tr></thead><tbody>${ebDescriptors.map(x=>`<tr><td>${esc(cleanDescriptor(x))}</td><td style="text-align:center;font-weight:700;">1</td></tr>`).join('')}</tbody></table></div>`
+                    ? `<div class="mt-3"><strong class="text-emerald-800">${getPlanLabel('ebkDescriptors')}</strong><table class="descriptor-table w-full text-xs mt-1"><thead><tr><th>${getPlanLabel('descriptor')}</th><th style="width:45px;text-align:center;">${getPlanLabel('points')}</th></tr></thead><tbody>${ebDescriptors.map(x=>`<tr><td>${esc(cleanDescriptor(x))}</td><td style="text-align:center;font-weight:700;">1</td></tr>`).join('')}</tbody></table></div>`
                     : '';
                 let formative = textOf(getField(s, ['formativeAssessment','formative_assessment','қалыптастырушыБағалау','қб','assessmentMethod']));
                 formative = formative.replace(/^\s*Қалыптастырушы\s+бағалау\s*:\s*/i, '').trim();
@@ -754,7 +764,7 @@
                 // Reflection belongs only to the lesson conclusion, never to the beginning/middle.
                 const reflectionText = reflection || reflectionPrompts;
                 const reflectionHtml = index === 2
-                    ? `<div class="mt-2 rounded-lg bg-violet-50 border border-violet-200 p-2"><strong class="text-violet-800">Рефлексия (сабақ соңында):</strong><div class="mt-1">${nl(shortText(reflectionText,420))}</div></div>`
+                    ? `<div class="mt-2 rounded-lg bg-violet-50 border border-violet-200 p-2"><strong class="text-violet-800">${getPlanLabel('reflection')}</strong><div class="mt-1">${nl(shortText(reflectionText,420))}</div></div>`
                     : '';
                 const aiWorkBox = renderAiWorkBox(aiWork);
                 const stu = `<div class="task-content">${renderPlanActionText(shortText(studentShort || '-',850))}</div>${aiWorkBox}${visualsInCell}${ebTaskBox}${reflectionHtml}`;
@@ -774,7 +784,7 @@
                 tr.innerHTML = `<td class="p-2 align-top font-bold text-indigo-900 border-r bg-slate-50">${esc(stageName)}</td>` +
                     `<td class="p-2 align-top border-r" contenteditable="true">${renderPlanActionText(shortText(teacherShort || '-',850))}</td>` +
                     `<td class="p-2 align-top border-r task-content" contenteditable="true">${stu || '-'}</td>` +
-                    `<td class="p-2 align-top border-r bg-amber-50/30" contenteditable="true">${ds || '-'}<div class="formative-assessment"><strong>Қалыптастырушы бағалау:</strong><div>${nl(formative || 'Мұғалім жауаптарды дескрипторлар бойынша тексеріп, дұрыс жауапты атап, қатені түзетуге қысқа кері байланыс береді.')}</div></div>${ebDescriptorsHtml}</td>` +
+                    `<td class="p-2 align-top border-r bg-amber-50/30" contenteditable="true">${ds || '-'}<div class="formative-assessment"><strong>${getPlanLabel('formative')}:</strong><div>${nl(formative || getPlanLabel('formativeDefault'))}</div></div>${ebDescriptorsHtml}</td>` +
                     (ebkOn ? c(eb, 'ebk-col bg-emerald-50/30') : '') +
                     c(resourceShort || '-');
                 tb.appendChild(tr);
@@ -988,9 +998,32 @@
             else document.getElementById('ebkColumnHeader').hidden = !this.checked;
         });
 
+        const PLAN_LABELS = {
+            kk: {topic:'Сабақтың тақырыбы:', objective:'Оқу бағдарламасына сәйкес оқыту мақсаты: (оқу мақсаты)', thinking:'Блум таксономиясы бойынша ойлау деңгейі:', goal:'Сабақтың мақсаты:', values:'Құндылықтар:', educational:'Тәрбиелік мақсат:', quote:'Аптаның дәйексөзі:', stage:'Кезең / Уақыт', teacher:'Мұғалім әрекеті', student:'Оқушы әрекеті', assessment:'Бағалау', ebk:'ЕБҚ оқушыларына қолдау', resources:'Ресурстар', appendices:'Сабаққа арналған қосымшалар', appendixHelp:'Толық тапсырма мәтіндері, оқушыға берілетін материалдар, ЖИ промпттары және жауап кілттері.', aiWork:'ЖИ ЖҰМЫС', descriptor:'Дескриптор', points:'Балл', ebkTask:'ЕБҚ оқушысына арналған тапсырма', ebkDescriptors:'ЕБҚ дескрипторлары', formative:'Қалыптастырушы бағалау', formativeDefault:'Мұғалім жауаптарды дескрипторлар бойынша тексеріп, дұрыс жауапты атап, қатені түзетуге қысқа кері байланыс береді.', reflection:'Рефлексия (сабақ соңында):'},
+            ru: {topic:'Тема урока:', objective:'Цель обучения:', thinking:'Уровни мышления по таксономии Блума:', goal:'Цель урока:', values:'Ценности:', educational:'Воспитательная цель:', quote:'Цитата недели:', stage:'Этап / время', teacher:'Действия учителя', student:'Действия ученика', assessment:'Оценивание', ebk:'Поддержка учащихся с ООП', resources:'Ресурсы', appendices:'Материалы к уроку', appendixHelp:'Полные тексты заданий, материалы для учащихся, промпты ИИ и ключи ответов.', aiWork:'ЗАДАНИЕ С ИИ', descriptor:'Дескриптор', points:'Баллы', ebkTask:'Адаптированное задание для учащегося с ООП', ebkDescriptors:'Дескрипторы адаптированного задания', formative:'Формативное оценивание', formativeDefault:'Учитель проверяет ответы по дескрипторам, отмечает верные решения и даёт краткую обратную связь для исправления ошибки.', reflection:'Рефлексия (в конце урока):'},
+            en: {topic:'Lesson topic:', objective:'Learning objective:', thinking:'Bloom’s taxonomy thinking levels:', goal:'Lesson objective:', values:'Values:', educational:'Educational aim:', quote:'Quote of the week:', stage:'Stage / Time', teacher:'Teacher actions', student:'Student actions', assessment:'Assessment', ebk:'Support for students with SEN', resources:'Resources', appendices:'Lesson materials', appendixHelp:'Full task texts, student handouts, AI prompts, and answer keys.', aiWork:'AI ACTIVITY', descriptor:'Descriptor', points:'Points', ebkTask:'Adapted task for a student with SEN', ebkDescriptors:'Adapted-task descriptors', formative:'Formative assessment', formativeDefault:'The teacher checks responses against the descriptors, highlights correct answers, and gives brief feedback to address errors.', reflection:'Reflection (at the end of the lesson):'}
+        };
+        function getPlanLabel(key) {
+            const lang = document.getElementById('outputLanguage')?.value || 'kk';
+            return PLAN_LABELS[lang]?.[key] || PLAN_LABELS.kk[key] || key;
+        }
+        function applyOutputLanguageLabels() {
+            const lang = document.getElementById('outputLanguage')?.value || 'kk';
+            const L = PLAN_LABELS[lang] || PLAN_LABELS.kk;
+            const ids = {outTopic:L.topic,outObjective:L.objective,outThinkingLevels:L.thinking,outLessonGoal:L.goal,outValues:L.values,outEducationalGoal:L.educational,outWeeklyQuote:L.quote};
+            Object.entries(ids).forEach(([id, value]) => { const el=document.getElementById(id); if(el && el.parentElement?.previousElementSibling) el.parentElement.previousElementSibling.textContent=value; });
+            const headers=document.querySelectorAll('#kmzhTable thead th');
+            [L.stage,L.teacher,L.student,L.assessment,L.ebk,L.resources].forEach((value,i)=>{ if(headers[i]) headers[i].textContent=value; });
+            const appTitle=document.querySelector('#lessonAppendices h3'); if(appTitle) appTitle.textContent=L.appendices;
+            const appHelp=document.querySelector('#lessonAppendices p'); if(appHelp) appHelp.textContent=L.appendixHelp;
+        }
+        document.getElementById('outputLanguage')?.addEventListener('change', applyOutputLanguageLabels);
+        applyOutputLanguageLabels();
+
         async function generateKMZH() {
             const v = id => document.getElementById(id).value.trim();
             const p = {
+                outputLanguage: v('outputLanguage') || 'kk',
                 subject: v('subject'),
                 grade: v('grade'),
                 unit: v('unit'),
@@ -1069,11 +1102,11 @@
                     throw new Error('ЖИ негізгі дескрипторларды 2 + 6 + 2 үлгісімен жасай алмады. Қайталап генерациялаңыз.');
                 }
 
-                setTextIfPresent('outTopic', p.topic);
-                setTextIfPresent('outSubject', p.subject);
+                setTextIfPresent('outTopic', textOf(getField(d, ['topic','translatedTopic'])) || p.topic);
+                setTextIfPresent('outSubject', textOf(getField(d, ['subject','translatedSubject'])) || p.subject);
                 setTextIfPresent('outGrade', p.grade + '-сынып');
-                setTextIfPresent('outUnit', p.unit);
-                setTextIfPresent('outObjective', p.objective);
+                setTextIfPresent('outUnit', textOf(getField(d, ['unit','translatedUnit'])) || p.unit);
+                setTextIfPresent('outObjective', textOf(getField(d, ['objective','translatedObjective'])) || p.objective);
                 setTextIfPresent('outThinkingLevels', textOf(getField(d, ['thinkingLevelsUsed','thinking_levels_used'])) || (p.thinkingLevels.length ? p.thinkingLevels.join(', ') : 'Оқу мақсатына сай автоматты түрде таңдалды'));
                 render(d);
                 setStatus('ҚМЖ дайын! Кестедегі мәтінді қажет болса өңдеп, Word немесе PDF түрінде сақтаңыз.', 'success');
