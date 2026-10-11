@@ -431,47 +431,54 @@
             return kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
         }
 
-        // Number main tasks once across all three lesson stages. Drop duplicate headings
-        // emitted by Gemini, including duplicates separated only by a work-form label.
+        // Normalize task headings before rendering: Gemini may repeat them on the same line,
+        // in adjacent lines, or provide out-of-order numbers (e.g. 4 then 3).
+        // The display counter is reset once before rendering all three stages.
         let renderedMainTaskCounter = 0;
         function ensureStudentTaskNumbers(raw) {
-            const lines = textOf(raw).replace(/\r/g, '').split('\n');
+            let value = textOf(raw).replace(/\r/g, '').trim();
+            if (!value) return '';
+            // Split headings even when Gemini places multiple headings in one paragraph.
+            value = value.replace(/\s+(?=(?:\d+\s*[-.)]?\s*тапсырма\b|тапсырма\s*№?\s*\d+))/giu, '\n');
+            const lines = value.split('\n');
             const out = [];
-            let headingOpen = false;
-            let contentAfterHeading = false;
-            let formSeenForHeading = false;
+            let currentTaskHasContent = false;
+            let currentTaskHasForm = false;
             const isTaskHeading = line => /^\s*(?:\d+\s*[-.)]?\s*тапсырма\b|тапсырма\s*№?\s*\d+)/iu.test(line);
             const isWorkForm = line => /^\s*ЖҰМЫС\s+ФОРМАСЫ\s*:/iu.test(line);
+            const isNonTaskMetadata = line => /^\s*(?:Дескриптор(?:лар)?|Балл\s*:|Қалыптастырушы\s+бағалау|ЕБҚ\s+дескриптор)/iu.test(line);
             for (const line of lines) {
                 if (isTaskHeading(line)) {
-                    // If Gemini repeats a heading before giving any task content, discard it.
-                    if (headingOpen && !contentAfterHeading) continue;
+                    // Consecutive headings without an actual task condition describe the same task.
+                    if (out.length && !currentTaskHasContent) continue;
                     renderedMainTaskCounter += 1;
-                    const label = line.match(/^\s*(?:\d+\s*[-.)]?\s*тапсырма|тапсырма\s*№?\s*\d+)/iu);
-                    const suffix = line.slice(label ? label[0].length : 0).replace(/^\s*[.:—-]?\s*/u, '');
+                    const heading = line.match(/^\s*(?:\d+\s*[-.)]?\s*тапсырма|тапсырма\s*№?\s*\d+)/iu);
+                    const suffix = line.slice(heading ? heading[0].length : 0).replace(/^\s*[.:—-]?\s*/u, '').trim();
                     out.push(`${renderedMainTaskCounter}-тапсырма.${suffix ? ' ' + suffix : ''}`);
-                    headingOpen = true;
-                    contentAfterHeading = false;
-                    formSeenForHeading = false;
+                    currentTaskHasContent = false;
+                    currentTaskHasForm = false;
                     continue;
                 }
                 if (isWorkForm(line)) {
-                    if (!headingOpen || contentAfterHeading) {
+                    // Do not manufacture another numbered task merely because a work form follows
+                    // an existing heading. If there is no heading, create exactly one.
+                    if (!out.length || (currentTaskHasContent && !currentTaskHasForm)) {
                         renderedMainTaskCounter += 1;
                         out.push(`${renderedMainTaskCounter}-тапсырма.`);
-                        headingOpen = true;
-                        contentAfterHeading = false;
+                        currentTaskHasContent = false;
                     }
                     out.push(line);
-                    formSeenForHeading = true;
+                    currentTaskHasForm = true;
                     continue;
                 }
-                if (line.trim() && !/^\s*(?:Дескриптор|Балл)\b/iu.test(line)) {
-                    if (headingOpen) contentAfterHeading = true;
+                if (line.trim() && !isNonTaskMetadata(line)) {
+                    // Metadata/work-form lines alone do not count as the task condition.
+                    if (!isWorkForm(line)) currentTaskHasContent = true;
                 }
                 out.push(line);
             }
-            return out.join('\n').replace(/\n{3,}/g, '\n\n');
+            // Remove any adjacent duplicate headings left after whitespace/format variations.
+            return out.join('\n').replace(/^(\s*\d+\s*[-.)]?\s*тапсырма[^\n]*)(?:\n\s*\d+\s*[-.)]?\s*тапсырма[^\n]*)+/gimu, '$1').replace(/\n{3,}/g, '\n\n').trim();
         }
 
         // Guarantee the visible ЕБҚ block is a numbered, actionable task rather than a vague activity label.
