@@ -431,39 +431,47 @@
             return kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
         }
 
-        // Number assignment blocks and format their task label, work form, and condition for quick scanning.
-        function ensureStudentTaskNumbers(raw, stageOffset = 0) {
+        // Number main tasks once across all three lesson stages. Drop duplicate headings
+        // emitted by Gemini, including duplicates separated only by a work-form label.
+        let renderedMainTaskCounter = 0;
+        function ensureStudentTaskNumbers(raw) {
             const lines = textOf(raw).replace(/\r/g, '').split('\n');
             const out = [];
-            let taskNo = Math.max(0, Number(stageOffset) || 0);
-            let hasHeading = false;
+            let headingOpen = false;
+            let contentAfterHeading = false;
+            let formSeenForHeading = false;
             const isTaskHeading = line => /^\s*(?:\d+\s*[-.)]?\s*тапсырма\b|тапсырма\s*№?\s*\d+)/iu.test(line);
             const isWorkForm = line => /^\s*ЖҰМЫС\s+ФОРМАСЫ\s*:/iu.test(line);
             for (const line of lines) {
                 if (isTaskHeading(line)) {
-                    // Preserve one heading per task. Duplicate consecutive labels are removed.
-                    const previous = [...out].reverse().find(x => x.trim());
-                    if (previous && isTaskHeading(previous)) continue;
-                    taskNo += 1;
-                    out.push(line.replace(/^\s*(?:\d+\s*[-.)]?\s*тапсырма|тапсырма\s*№?\s*\d+)/iu, `${taskNo}-тапсырма`));
-                    hasHeading = true;
+                    // If Gemini repeats a heading before giving any task content, discard it.
+                    if (headingOpen && !contentAfterHeading) continue;
+                    renderedMainTaskCounter += 1;
+                    const label = line.match(/^\s*(?:\d+\s*[-.)]?\s*тапсырма|тапсырма\s*№?\s*\d+)/iu);
+                    const suffix = line.slice(label ? label[0].length : 0).replace(/^\s*[.:—-]?\s*/u, '');
+                    out.push(`${renderedMainTaskCounter}-тапсырма.${suffix ? ' ' + suffix : ''}`);
+                    headingOpen = true;
+                    contentAfterHeading = false;
+                    formSeenForHeading = false;
                     continue;
                 }
                 if (isWorkForm(line)) {
-                    if (!hasHeading) {
-                        taskNo += 1;
-                        out.push(`${taskNo}-тапсырма.`);
+                    if (!headingOpen || contentAfterHeading) {
+                        renderedMainTaskCounter += 1;
+                        out.push(`${renderedMainTaskCounter}-тапсырма.`);
+                        headingOpen = true;
+                        contentAfterHeading = false;
                     }
-                    hasHeading = true;
                     out.push(line);
+                    formSeenForHeading = true;
                     continue;
                 }
-                if (line.trim() && !/^\s*(?:Әдіс|Тапсырма шарты|Шарт)\s*:/iu.test(line)) {
-                    // Keep the heading active until the next explicitly numbered task.
+                if (line.trim() && !/^\s*(?:Дескриптор|Балл)\b/iu.test(line)) {
+                    if (headingOpen) contentAfterHeading = true;
                 }
                 out.push(line);
             }
-            return out.join('\n');
+            return out.join('\n').replace(/\n{3,}/g, '\n\n');
         }
 
         // Guarantee the visible ЕБҚ block is a numbered, actionable task rather than a vague activity label.
@@ -709,6 +717,7 @@
             let n = 0;
             let ebkTotal = 0;
             const stages = normalizeArray(d.stages || d.stage || d.lessonStages);
+            renderedMainTaskCounter = 0;
             const stageNames = ['Сабақтың басы (0–5 мин)','Сабақтың ортасы (5–35 мин)','Сабақтың соңы (35–45 мин)'];
             const appendixItems = [];
             const addAppendix = (title, content, stageName='') => {
@@ -763,7 +772,7 @@
                 let studentShort = textOf(getField(s, ['studentSummary','student_summary','қысқашаТапсырма','taskSummary'])) || studentFull;
                 // aiWork has its own prominent panel; remove any repeated panel/content embedded in studentSummary.
                 if (aiWork) studentShort = removeEmbeddedAiWork(studentShort);
-                studentShort = ensureStudentTaskNumbers(studentShort, index);
+                studentShort = ensureStudentTaskNumbers(studentShort);
                 // Show the curated summary first so the main teaching actions and AI reference are not cut off.
                 // Keep the full teacher script in the appendix when it is long.
                 const teacherSummary = textOf(getField(s, ['teacherSummary','teacher_summary','қысқашаМұғалімӘрекеті']));
