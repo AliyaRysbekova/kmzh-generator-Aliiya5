@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ҚМЖ Generator — әдістемелік көмекші V35</title>
-    <!-- V36: large bold AI WORK heading, student action column renamed, separated action paragraphs. -->
+    <title>ҚМЖ Generator — әдістемелік көмекші V37</title>
+    <!-- V37: adds 15 cross-curricular AI/digital tool checkboxes and sends selections to the Worker. V36 formatting retained. -->
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS: public publishable key only; no secret/service_role key is placed in the browser. -->
@@ -109,23 +109,96 @@
                 <input type="text" id="topic" placeholder="Мысалы: Нәруыздың құрылымы мен қызметі" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
-            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3">
-                <label for="lessonType" class="block text-xs font-semibold text-slate-700 mb-1">Сабақтың басым бағыты</label>
+            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 space-y-2">
+                <label for="lessonType" class="block text-xs font-semibold text-slate-700 mb-1">Жалпы сабақ форматы</label>
                 <select id="lessonType" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     <option value="auto" selected>Автоматты таңдау — оқу мақсатына қарай</option>
                     <option value="new">Жаңа білімді меңгеру</option>
-                    <option value="research">Зерттеу және эксперимент</option>
+                    <option value="practice">Бекіту және білімді қолдану</option>
+                    <option value="problem">Проблемалық сабақ</option>
+                    <option value="research">Зерттеушілік сабақ / тәжірибе (пәнге сай болса)</option>
                     <option value="pisa">Функционалдық сауаттылық (PISA)</option>
                     <option value="stem">STEM/STEAM жобасы</option>
-                    <option value="practice">Бекіту және білімді қолдану</option>
+                    <option value="project">Жобалық сабақ</option>
+                    <option value="discussion">Пікірталас және дәлелдеу</option>
+                    <option value="case">Кейс / өмірлік жағдаятты талдау</option>
+                    <option value="stations">Сабақ станциялары</option>
+                    <option value="error_analysis">Қателерді талдау</option>
+                    <option value="peer">Өзара оқыту және түсіндіру</option>
                 </select>
-                <p class="text-xs text-slate-500 mt-1">Автоматты режим оқу мақсатына сай бағытты таңдайды. Қажет болса, сабақ бағытын өзіңіз белгілеңіз.</p>
+                <p class="text-xs text-slate-500">Бұл — барлық пәнге ортақ формат. Гуманитарлық пәндерде зертханалық тәжірибе автоматты түрде ұсынылмайды.</p>
+            </div>
+
+            <div class="rounded-xl border border-teal-200 bg-teal-50/60 p-3 space-y-2" id="subjectApproachPanel">
+                <div>
+                    <label for="subjectCategory" class="block text-xs font-semibold text-teal-950 mb-1">Пән бағыты</label>
+                    <select id="subjectCategory" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        <option value="auto" selected>Пән атауы бойынша автоматты анықтау</option>
+                        <option value="language">Тіл пәндері</option>
+                        <option value="literature">Әдебиет</option>
+                        <option value="history">Тарих</option>
+                        <option value="natural">Жаратылыстану (биология, химия, физика)</option>
+                        <option value="math">Математика</option>
+                        <option value="geography">География</option>
+                        <option value="informatics">Информатика / цифрлық технология</option>
+                        <option value="arts">Өнер / технология</option>
+                        <option value="social">Қоғамдық пәндер</option>
+                        <option value="other">Басқа пән</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="subjectApproach" class="block text-xs font-semibold text-teal-950 mb-1">Пәнге тән дағды немесе жұмыс форматы</label>
+                    <select id="subjectApproach" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        <option value="auto">Оқу мақсатына қарай автоматты таңдау</option>
+                    </select>
+                </div>
+                <p id="subjectApproachHelp" class="text-xs text-teal-900">Пән атауын енгізіңіз. Ұсыныстар пән бағытына сай өзгереді; нақты таңдау жасасаңыз, генератор оны ҚМЖ мазмұнына енгізеді.</p>
             </div>
 
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Оқу мақсаты (ОМ)</label>
                 <textarea id="objective" rows="2" placeholder="Мысалы: 10.5.1.2 нәруыздардың біріншілік, екіншілік, үшіншілік және төртіншілік құрылымдарын сипаттау" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
             </div>
+            <div class="rounded-xl border border-amber-200 bg-amber-50/70 p-3 space-y-3" id="bloomLevelsPanel">
+                <div>
+                    <label class="block text-sm font-bold text-amber-950 mb-1">Блум таксономиясы бойынша ойлау деңгейлері</label>
+                    <p class="text-xs text-amber-900 leading-relaxed">Бір немесе бірнеше деңгейді таңдаңыз. Таңдауыңыз сабақ мақсатына, тапсырмалардың күрделілігіне және дескрипторларға әсер етеді. Ештеңе таңдалмаса, генератор оқу мақсатының етістігіне қарай деңгей(лер)ді өзі анықтайды.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2 text-sm text-slate-700">
+                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Білу / еске түсіру" class="mt-1 accent-amber-700"><span><strong>Білу / еске түсіру</strong><small class="block text-xs text-slate-500">Атайды, таниды, еске түсіреді</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Түсіну" class="mt-1 accent-amber-700"><span><strong>Түсіну</strong><small class="block text-xs text-slate-500">Түсіндіреді, сипаттайды, мысал келтіреді</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Қолдану" class="mt-1 accent-amber-700"><span><strong>Қолдану</strong><small class="block text-xs text-slate-500">Қолданады, есептейді, орындайды</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Талдау" class="mt-1 accent-amber-700"><span><strong>Талдау</strong><small class="block text-xs text-slate-500">Салыстырады, жіктейді, талдайды</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Жинақтау / синтездеу" class="mt-1 accent-amber-700"><span><strong>Жинақтау / синтездеу</strong><small class="block text-xs text-slate-500">Жинақтайды, біріктіреді, жүйелейді, қорытынды жасайды</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Бағалау / пайымдау" class="mt-1 accent-amber-700"><span><strong>Бағалау / пайымдау</strong><small class="block text-xs text-slate-500">Бағалайды, критериймен тексереді, дәлелдейді, негіздейді</small></span></label>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-violet-200 bg-violet-50/70 p-3 space-y-3" id="aiToolsPanel">
+                <div>
+                    <label class="block text-sm font-bold text-violet-950 mb-1">ЖИ және цифрлық құралдар</label>
+                    <p class="text-xs text-violet-800 leading-relaxed">Барлық пәнге жарамды ЖИ және цифрлық құралдар. Бірнешеуін таңдауға болады. ҚМЖ-да оқу мақсатына сәйкес бір құралмен нақты әрекет ұсынылады. Интерактивті платформа таңдалса, тапсырма сол платформада орындалады. Ештеңе таңдалмаса, генератор өзі таңдайды.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2 text-sm text-slate-700">
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="ChatGPT" class="mt-1 accent-violet-700"><span><strong>ChatGPT</strong><small class="block text-xs text-slate-500">Идея, сұрақ, түсіндірме, саралау</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Google Gemini" class="mt-1 accent-violet-700"><span><strong>Google Gemini</strong><small class="block text-xs text-slate-500">Мәтін, сурет және дерекпен жұмыс</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Microsoft Copilot" class="mt-1 accent-violet-700"><span><strong>Microsoft Copilot</strong><small class="block text-xs text-slate-500">Түсіндіру, сұрақтар, мәтін дайындау</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Claude" class="mt-1 accent-violet-700"><span><strong>Claude</strong><small class="block text-xs text-slate-500">Мәтінді талдау, кері байланыс</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="DeepSeek" class="mt-1 accent-violet-700"><span><strong>DeepSeek</strong><small class="block text-xs text-slate-500">Талдау, шешім мен дәлелді салыстыру</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Wordwall" class="mt-1 accent-violet-700"><span><strong>Wordwall</strong><small class="block text-xs text-slate-500">Интерактивті ойындар, жаттығулар және қайталау</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="LearningApps" class="mt-1 accent-violet-700"><span><strong>LearningApps</strong><small class="block text-xs text-slate-500">Интерактивті сәйкестендіру, жіктеу және жаттығулар</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Padlet" class="mt-1 accent-violet-700"><span><strong>Padlet</strong><small class="block text-xs text-slate-500">Ортақ тақта, идея жинау және топтық пікір алмасу</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Canva AI" class="mt-1 accent-violet-700"><span><strong>Canva AI</strong><small class="block text-xs text-slate-500">Инфографика, көрнекілік, слайд</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Kahoot! AI" class="mt-1 accent-violet-700"><span><strong>Kahoot! AI</strong><small class="block text-xs text-slate-500">Ойын түріндегі сұрақтар мен викторина</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Wayground (Quizizz) AI" class="mt-1 accent-violet-700"><span><strong>Wayground (Quizizz) AI</strong><small class="block text-xs text-slate-500">Тест пен қалыптастырушы бағалау</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Quizlet AI" class="mt-1 accent-violet-700"><span><strong>Quizlet AI</strong><small class="block text-xs text-slate-500">Карточкалар, терминдер, қайталау</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Mentimeter" class="mt-1 accent-violet-700"><span><strong>Mentimeter</strong><small class="block text-xs text-slate-500">Сауалнама, сөз бұлты және жедел кері байланыс</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="EducaPlay" class="mt-1 accent-violet-700"><span><strong>Educaplay</strong><small class="block text-xs text-slate-500">Интерактивті сөзжұмбақтар, викториналар мен жаттығулар</small></span></label>
+                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Blooket" class="mt-1 accent-violet-700"><span><strong>Blooket</strong><small class="block text-xs text-slate-500">Ойын арқылы білімді бекіту және қайталау</small></span></label>
+                </div>
+                <p class="text-xs text-slate-500">Ескерту: аккаунт пен интернет қажет болуы мүмкін. ЖИ ұсынған жауапты оқулықпен, дерекпен немесе пәндік критериймен тексеріңіз.</p>
+            </div>
+
             <div>
                 <label for="weeklyQuote" class="block text-xs font-semibold text-slate-600 mb-1">Аптаның дәйексөзі (міндетті емес)</label>
                 <input type="text" id="weeklyQuote" maxlength="500" placeholder="Мектеп ұсынған апталық дәйексөзді енгізіңіз" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
@@ -204,6 +277,10 @@
                         <tr>
                             <td class="font-bold bg-slate-50 p-2 w-1/4">Оқу бағдарламасына сәйкес оқыту мақсаты: (оқу мақсаты)</td>
                             <td id="outObjective" class="p-2" colspan="3">-</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold bg-slate-50 p-2">Блум таксономиясы бойынша ойлау деңгейі:</td>
+                            <td id="outThinkingLevels" class="p-2" colspan="3">-</td>
                         </tr>
                         <tr>
                             <td class="font-bold bg-slate-50 p-2">Сабақтың мақсаты:</td>
@@ -382,14 +459,21 @@
         function resetForm() {
             ['subject','unit','topic','objective','weeklyQuote','ebkOther'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
             document.getElementById('grade').value = '';
+            document.getElementById('lessonType').value = 'auto';
+            document.getElementById('subjectCategory').value = 'auto';
+            document.getElementById('subjectApproach').value = 'auto';
+            subjectCategoryManuallySet = false;
+            updateSubjectApproachOptions();
             document.getElementById('ebkEnabled').checked = false;
+            document.querySelectorAll('input[name="aiTool"]').forEach(el => { el.checked = false; });
+            document.querySelectorAll('input[name="thinkingLevel"]').forEach(el => { el.checked = false; });
             document.getElementById('ebkOptions').classList.add('hidden');
             document.getElementById('ebkColumnHeader').hidden = true;
             document.getElementById('lessonAppendices').classList.add('hidden');
             document.getElementById('appendicesContent').innerHTML = '';
             currentRenderedData = null;
             document.querySelectorAll('input[name="ebkNeed"]').forEach(el => { el.checked = ['Қысқа әрі нақты нұсқаулықтар','Қадамдарға бөлінген тапсырмалар','Көрнекілік, суреттер және сызбалар'].includes(el.value); });
-            ['outSubject','outGrade','outUnit','outObjective','outLessonGoal','outValues','outEducationalGoal','outWeeklyQuote'].forEach(id => setTextIfPresent(id, '-'));
+            ['outSubject','outGrade','outUnit','outObjective','outThinkingLevels','outLessonGoal','outValues','outEducationalGoal','outWeeklyQuote'].forEach(id => setTextIfPresent(id, '-'));
             setTextIfPresent('outTopic', 'Сабақ тақырыбы көрсетілмеген');
             const quoteRow = document.getElementById('weeklyQuoteRow'); if (quoteRow) quoteRow.classList.add('hidden');
             document.getElementById('kmzhTableBody').innerHTML = EMPTY_ROW;
@@ -697,6 +781,140 @@
                 : '<i class="fa-solid fa-wand-magic-sparkles"></i> ҚМЖ құру';
         }
 
+        const SUBJECT_APPROACH_OPTIONS = {
+            language: [
+                ['listening','Тыңдалым: негізгі ой мен нақты ақпаратты анықтау'],
+                ['speaking','Айтылым: диалог, пікір айту немесе презентация'],
+                ['reading','Оқылым: мәтіннен ақпарат табу және түсіндіру'],
+                ['writing','Жазылым: мәтін жазу, жоспарлау және редакциялау'],
+                ['vocabulary_grammar','Лексика және грамматика контексте'],
+                ['text_analysis','Мәтіннің мақсаты, құрылымы және автор позициясын талдау'],
+                ['debate','Пікірталас және аргументация'],
+                ['creative_writing','Шығармашылық жазылым'],
+                ['communicative_situation','Коммуникативтік жағдаят / рөлдік диалог']
+            ],
+            literature: [
+                ['literary_analysis','Әдеби шығарманы талдау'],
+                ['character_analysis','Кейіпкер бейнесі мен әрекетін талдау'],
+                ['expressive_devices','Көркемдегіш құралдарды анықтау және түсіндіру'],
+                ['reading','Мәтінді оқу және түсіндіру'],
+                ['discussion','Әдеби пікірталас және дәлелді пікір'],
+                ['creative_writing','Шығармашылық жауап немесе балама аяқталым жазу'],
+                ['comparison','Шығармаларды немесе кейіпкерлерді салыстыру']
+            ],
+            history: [
+                ['source_analysis','Тарихи дереккөзді талдау'],
+                ['chronology','Хронология және себеп-салдар байланысы'],
+                ['map_work','Тарихи картамен жұмыс'],
+                ['historical_debate','Тарихи пікірталас және дәлел'],
+                ['historical_reconstruction','Тарихи реконструкция / жоба'],
+                ['perspective_analysis','Әртүрлі тарихи көзқарасты салыстыру']
+            ],
+            natural: [
+                ['phenomenon_analysis','Құбылысты немесе модельді түсіндіру'],
+                ['experiment','Эксперимент / практикалық зерттеу'],
+                ['model','Модель құру және түсіндіру'],
+                ['data_analysis','Кесте, график немесе деректерді талдау'],
+                ['cause_effect','Себеп-салдар байланысын анықтау'],
+                ['practical_case','Өмірлік жағдаятқа білімді қолдану']
+            ],
+            math: [
+                ['problem_solving','Есеп шығару және шешім жолын негіздеу'],
+                ['solution_methods','Бір есепті бірнеше тәсілмен шешу'],
+                ['error_analysis','Шешімдегі қатені табу және түзету'],
+                ['pattern_analysis','Заңдылық пен математикалық байланысты анықтау'],
+                ['mathematical_model','Математикалық модель құру'],
+                ['applied_case','Өмірлік жағдаяттағы есеп']
+            ],
+            geography: [
+                ['map_work','Картамен және кеңістіктік ақпаратпен жұмыс'],
+                ['data_analysis','Кесте, диаграмма және статистикалық деректерді талдау'],
+                ['compare_regions','Аймақтарды салыстыру'],
+                ['cause_effect','Географиялық себеп-салдар байланысы'],
+                ['environmental_case','Экологиялық немесе өмірлік кейс'],
+                ['field_inquiry','Бақылау / шағын далалық зерттеу (мүмкін болса)']
+            ],
+            informatics: [
+                ['algorithm','Алгоритмді құрастыру және тексеру'],
+                ['computational_thinking','Есепті бөліктерге жіктеу және логикалық шешім'],
+                ['coding','Кодты жазу, оқу немесе қатесін түзету'],
+                ['digital_product','Цифрлық өнім жасау'],
+                ['cybersecurity_case','Цифрлық қауіпсіздік кейсі']
+            ],
+            arts: [
+                ['design_process','Жобалау: идея, нобай, өнім, жетілдіру'],
+                ['creative_project','Шығармашылық жоба немесе орындау'],
+                ['prototype','Прототип жасау және сынау'],
+                ['critique','Өнімді критерий бойынша талдау'],
+                ['performance','Орындау / көрсету және кері байланыс']
+            ],
+            social: [
+                ['debate','Пікірталас және дәлелді көзқарас'],
+                ['case','Қоғамдық өмірдегі кейсті талдау'],
+                ['source_analysis','Дереккөз / медиа мәтінді талдау'],
+                ['decision_making','Шешім нұсқаларын салыстыру және таңдау'],
+                ['media_literacy','Ақпараттың сенімділігі мен медиасауаттылық']
+            ],
+            other: [
+                ['text_analysis','Мәтін немесе ақпаратты талдау'],
+                ['discussion','Пікірталас және дәлелдеу'],
+                ['case','Кейс / жағдаятты талдау'],
+                ['project','Жобалық жұмыс'],
+                ['problem_solving','Проблеманы шешу'],
+                ['peer_learning','Өзара оқыту']
+            ]
+        };
+        const SUBJECT_CATEGORY_LABELS = {
+            language:'Тіл пәндері', literature:'Әдебиет', history:'Тарих', natural:'Жаратылыстану',
+            math:'Математика', geography:'География', informatics:'Информатика / цифрлық технология',
+            arts:'Өнер / технология', social:'Қоғамдық пәндер', other:'Басқа пән'
+        };
+        let subjectCategoryManuallySet = false;
+
+        function detectSubjectCategory(subject) {
+            const s = String(subject || '').toLocaleLowerCase();
+            if (/(қазақ тілі|орыс тілі|ағылшын тілі|шет тілі|тіл мен әдебиет|тіл пән|language|english|russian|kazakh|грамматик|лингвист|иностранн.* язык|немецк.* язык|французск.* язык)/i.test(s)) return 'language';
+            if (/(әдебиет|литератур|literature)/i.test(s)) return 'literature';
+            if (/(тарих|history|история)/i.test(s)) return 'history';
+            if (/(биолог|хими|физик|жаратылыстану|science|biology|chemistry|physics)/i.test(s)) return 'natural';
+            if (/(математ|алгебра|геометрия|math|арифметик)/i.test(s)) return 'math';
+            if (/(географ|geography)/i.test(s)) return 'geography';
+            if (/(информатик|компьютер|программалау|coding|computer science|цифрлық технология)/i.test(s)) return 'informatics';
+            if (/(көркем еңбек|технология|музыка|бейнелеу өнер|дизайн|art|craft)/i.test(s)) return 'arts';
+            if (/(құқық|қоғамтану|экономика|азаматтану|дүниежүзі|әлеумет|social studies|civics|право)/i.test(s)) return 'social';
+            return 'other';
+        }
+
+        function updateSubjectApproachOptions() {
+            const categorySelect = document.getElementById('subjectCategory');
+            const approachSelect = document.getElementById('subjectApproach');
+            const help = document.getElementById('subjectApproachHelp');
+            if (!categorySelect || !approachSelect) return;
+            let category = categorySelect.value;
+            if (category === 'auto') category = detectSubjectCategory(document.getElementById('subject')?.value || '');
+            const previousValue = approachSelect.value;
+            const options = SUBJECT_APPROACH_OPTIONS[category] || SUBJECT_APPROACH_OPTIONS.other;
+            approachSelect.innerHTML = '<option value="auto">Оқу мақсатына қарай автоматты таңдау</option>' + options.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+            approachSelect.value = options.some(([value]) => value === previousValue) ? previousValue : 'auto';
+            if (help) {
+                const subjectEntered = Boolean(document.getElementById('subject')?.value.trim());
+                const labels = SUBJECT_CATEGORY_LABELS[category] || 'Пән бағыты';
+                help.textContent = subjectEntered ? `Анықталған бағыт: ${labels}. Нақты форматты таңдасаңыз, ҚМЖ тапсырмалары, оқушы әрекеті және бағалау осы бағытқа сәйкестенеді.` : 'Пән атауын енгізіңіз. Ұсыныстар пән бағытына сай өзгереді; нақты таңдау жасасаңыз, генератор оны ҚМЖ мазмұнына енгізеді.';
+            }
+        }
+
+        document.getElementById('subject').addEventListener('input', function () {
+            if (!subjectCategoryManuallySet) {
+                document.getElementById('subjectCategory').value = this.value.trim() ? detectSubjectCategory(this.value) : 'auto';
+                updateSubjectApproachOptions();
+            }
+        });
+        document.getElementById('subjectCategory').addEventListener('change', function () {
+            subjectCategoryManuallySet = this.value !== 'auto';
+            updateSubjectApproachOptions();
+        });
+        updateSubjectApproachOptions();
+
         document.getElementById('ebkEnabled').addEventListener('change', function() {
             document.getElementById('ebkOptions').classList.toggle('hidden', !this.checked);
             if (currentRenderedData) render(currentRenderedData, true);
@@ -711,8 +929,12 @@
                 unit: v('unit'),
                 topic: v('topic'),
                 objective: v('objective'),
+                thinkingLevels: Array.from(document.querySelectorAll('input[name="thinkingLevel"]:checked')).map(el => el.value),
                 weeklyQuote: v('weeklyQuote'),
                 lessonType: v('lessonType') || 'auto',
+                subjectCategory: v('subjectCategory') === 'auto' ? detectSubjectCategory(v('subject')) : v('subjectCategory'),
+                subjectApproach: v('subjectApproach') || 'auto',
+                aiTools: Array.from(document.querySelectorAll('input[name="aiTool"]:checked')).map(el => el.value),
                 ebkEnabled: document.getElementById('ebkEnabled').checked,
                 ebkNeeds: Array.from(document.querySelectorAll('input[name="ebkNeed"]:checked')).map(el => el.value),
                 ebkOther: v('ebkOther')
@@ -785,6 +1007,7 @@
                 setTextIfPresent('outGrade', p.grade + '-сынып');
                 setTextIfPresent('outUnit', p.unit);
                 setTextIfPresent('outObjective', p.objective);
+                setTextIfPresent('outThinkingLevels', textOf(getField(d, ['thinkingLevelsUsed','thinking_levels_used'])) || (p.thinkingLevels.length ? p.thinkingLevels.join(', ') : 'Оқу мақсатына сай автоматты түрде таңдалды'));
                 render(d);
                 setStatus('ҚМЖ дайын! Кестедегі мәтінді қажет болса өңдеп, Word немесе PDF түрінде сақтаңыз.', 'success');
                 document.getElementById('kmzhContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
