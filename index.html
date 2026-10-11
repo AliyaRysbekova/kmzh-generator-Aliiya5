@@ -270,12 +270,12 @@
                 <!-- Бос титулдық деректер: мұғалім Word/PDF жүктегеннен кейін толтырады -->
                 <table id="teacherHeaderTable" class="w-full text-xs text-left" style="border-collapse:collapse; margin-bottom:12px;">
                     <tbody>
-                        <tr><td style="border:1px solid #000; padding:4px; width:23%; font-weight:bold;">Білім беру ұйымының атауы</td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
-                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;">Пәні:</td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
-                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;">Бөлім:</td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
-                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;">Педагогтің аты-жөні:</td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
-                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;">Сынып:</td><td style="border:1px solid #000; padding:4px; height:22px;">
-                            <table style="width:100%; border-collapse:collapse; margin:0;"><tr><td style="border:0; padding:0; width:50%;">Қатысушылар саны:</td><td style="border:0; border-left:1px solid #000; padding:0 0 0 8px;">Қатыспағандар саны:</td></tr></table>
+                        <tr><td style="border:1px solid #000; padding:4px; width:23%; font-weight:bold;"><span id="labelOrgName">Білім беру ұйымының атауы</span></td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
+                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;"><span id="labelSubject">Пәні:</span></td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
+                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;"><span id="labelUnit">Бөлім:</span></td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
+                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;"><span id="labelTeacherName">Педагогтің аты-жөні:</span></td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
+                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;"><span id="labelClass">Сынып:</span></td><td style="border:1px solid #000; padding:4px; height:22px;">
+                            <table style="width:100%; border-collapse:collapse; margin:0;"><tr><td style="border:0; padding:0; width:50%;"><span id="labelAttending">Қатысушылар саны:</span></td><td style="border:0; border-left:1px solid #000; padding:0 0 0 8px;"><span id="labelAbsent">Қатыспағандар саны:</span></td></tr></table>
                         </td></tr>
                     </tbody>
                 </table>
@@ -317,7 +317,7 @@
                 <div class="overflow-x-auto">
                     <table id="kmzhTable" class="w-full text-xs text-left">
                         <thead><tr class="bg-slate-100 text-xs">
- <th class="p-2 border" style="width:8%">Кезең / Уақыт</th><th class="p-2 border" style="width:17%">Мұғалім әрекеті</th><th class="p-2 border" style="width:31%">Оқушы әрекеті</th><th class="p-2 border" style="width:20%">Бағалау</th><th class="p-2 border ebk-col" id="ebkColumnHeader" style="width:16%" hidden>ЕБҚ оқушыларына қолдау</th><th class="p-2 border" style="width:8%">Ресурстар</th></tr></thead>
+ <th class="p-2 border" style="width:8%"><span id="labelStage">Кезең / Уақыт</span></th><th class="p-2 border" style="width:17%"><span id="labelTeacherActions">Мұғалім әрекеті</span></th><th class="p-2 border" style="width:31%"><span id="labelStudentActions">Оқушы әрекеті</span></th><th class="p-2 border" style="width:20%"><span id="labelAssessment">Бағалау</span></th><th class="p-2 border ebk-col" id="ebkColumnHeader" style="width:16%" hidden><span id="labelEbk">ЕБҚ оқушыларына қолдау</span></th><th class="p-2 border" style="width:8%"><span id="labelResources">Ресурстар</span></th></tr></thead>
                         <tbody id="kmzhTableBody">
                             <tr>
                                 <td colspan="6" class="p-6 text-center text-slate-400 italic">
@@ -682,8 +682,8 @@
         let currentRenderedData = null;
         function render(d, quiet = false) {
             currentRenderedData = d;
-            document.getElementById('outLessonGoal').innerText = textOf(getField(d, ['lessonGoal','lesson_goal','goal','сабақМақсаты'])) || '-';
-            document.getElementById('outValues').innerText = textOf(getField(d, ['values','value','құндылықтар'])) || '-';
+            setTextIfPresent('outLessonGoal', textOf(getField(d, ['lessonGoal','lesson_goal','goal','сабақМақсаты'])) || '-');
+            setTextIfPresent('outValues', textOf(getField(d, ['values','value','құндылықтар'])) || '-');
             setTextIfPresent('outEducationalGoal', textOf(getField(d, ['educationalGoal','educational_goal','тәрбиелікМақсат','тәрбиелік мақсат'])) || '-');
             const weeklyQuote = textOf(getField(d, ['weeklyQuote','weekly_quote','аптаныңДәйексөзі','аптаның дәйексөзі']));
             setTextIfPresent('outWeeklyQuote', weeklyQuote);
@@ -816,6 +816,8 @@
 
         function setStatus(message, type = 'info') {
             const el = document.getElementById('generationStatus');
+            // A missing status panel must never break lesson generation or hide the original error.
+            if (!el) { if (message) console.warn('[ҚМЖ Generator]', message); return; }
             if (!message) {
                 el.className = 'hidden rounded-lg border p-3 text-sm';
                 el.textContent = '';
@@ -999,9 +1001,9 @@
         });
 
         const PLAN_LABELS = {
-            kk: {topic:'Сабақтың тақырыбы:', objective:'Оқу бағдарламасына сәйкес оқыту мақсаты: (оқу мақсаты)', thinking:'Блум таксономиясы бойынша ойлау деңгейі:', goal:'Сабақтың мақсаты:', values:'Құндылықтар:', educational:'Тәрбиелік мақсат:', quote:'Аптаның дәйексөзі:', stage:'Кезең / Уақыт', teacher:'Мұғалім әрекеті', student:'Оқушы әрекеті', assessment:'Бағалау', ebk:'ЕБҚ оқушыларына қолдау', resources:'Ресурстар', appendices:'Сабаққа арналған қосымшалар', appendixHelp:'Толық тапсырма мәтіндері, оқушыға берілетін материалдар, ЖИ промпттары және жауап кілттері.', aiWork:'ЖИ ЖҰМЫС', descriptor:'Дескриптор', points:'Балл', ebkTask:'ЕБҚ оқушысына арналған тапсырма', ebkDescriptors:'ЕБҚ дескрипторлары', formative:'Қалыптастырушы бағалау', formativeDefault:'Мұғалім жауаптарды дескрипторлар бойынша тексеріп, дұрыс жауапты атап, қатені түзетуге қысқа кері байланыс береді.', reflection:'Рефлексия (сабақ соңында):'},
-            ru: {topic:'Тема урока:', objective:'Цель обучения:', thinking:'Уровни мышления по таксономии Блума:', goal:'Цель урока:', values:'Ценности:', educational:'Воспитательная цель:', quote:'Цитата недели:', stage:'Этап / время', teacher:'Действия учителя', student:'Действия ученика', assessment:'Оценивание', ebk:'Поддержка учащихся с ООП', resources:'Ресурсы', appendices:'Материалы к уроку', appendixHelp:'Полные тексты заданий, материалы для учащихся, промпты ИИ и ключи ответов.', aiWork:'ЗАДАНИЕ С ИИ', descriptor:'Дескриптор', points:'Баллы', ebkTask:'Адаптированное задание для учащегося с ООП', ebkDescriptors:'Дескрипторы адаптированного задания', formative:'Формативное оценивание', formativeDefault:'Учитель проверяет ответы по дескрипторам, отмечает верные решения и даёт краткую обратную связь для исправления ошибки.', reflection:'Рефлексия (в конце урока):'},
-            en: {topic:'Lesson topic:', objective:'Learning objective:', thinking:'Bloom’s taxonomy thinking levels:', goal:'Lesson objective:', values:'Values:', educational:'Educational aim:', quote:'Quote of the week:', stage:'Stage / Time', teacher:'Teacher actions', student:'Student actions', assessment:'Assessment', ebk:'Support for students with SEN', resources:'Resources', appendices:'Lesson materials', appendixHelp:'Full task texts, student handouts, AI prompts, and answer keys.', aiWork:'AI ACTIVITY', descriptor:'Descriptor', points:'Points', ebkTask:'Adapted task for a student with SEN', ebkDescriptors:'Adapted-task descriptors', formative:'Formative assessment', formativeDefault:'The teacher checks responses against the descriptors, highlights correct answers, and gives brief feedback to address errors.', reflection:'Reflection (at the end of the lesson):'}
+            kk: {topic:'Сабақтың тақырыбы:', objective:'Оқу бағдарламасына сәйкес оқыту мақсаты: (оқу мақсаты)', thinking:'Блум таксономиясы бойынша ойлау деңгейі:', goal:'Сабақтың мақсаты:', values:'Құндылықтар:', educational:'Тәрбиелік мақсат:', quote:'Аптаның дәйексөзі:', stage:'Кезең / Уақыт', teacher:'Мұғалім әрекеті', student:'Оқушы әрекеті', assessment:'Бағалау', ebk:'ЕБҚ оқушыларына қолдау', resources:'Ресурстар', appendices:'Сабаққа арналған қосымшалар', appendixHelp:'Толық тапсырма мәтіндері, оқушыға берілетін материалдар, ЖИ промпттары және жауап кілттері.', aiWork:'ЖИ ЖҰМЫС', descriptor:'Дескриптор', points:'Балл', ebkTask:'ЕБҚ оқушысына арналған тапсырма', ebkDescriptors:'ЕБҚ дескрипторлары', formative:'Қалыптастырушы бағалау', formativeDefault:'Мұғалім жауаптарды дескрипторлар бойынша тексеріп, дұрыс жауапты атап, қатені түзетуге қысқа кері байланыс береді.', reflection:'Рефлексия (сабақ соңында):', orgName:'Білім беру ұйымының атауы', subjectLabel:'Пәні:', unitLabel:'Бөлім:', teacherName:'Педагогтің аты-жөні:', classLabel:'Сынып:', attending:'Қатысушылар саны:', absent:'Қатыспағандар саны:'},
+            ru: {topic:'Тема урока:', objective:'Цель обучения:', thinking:'Уровни мышления по таксономии Блума:', goal:'Цель урока:', values:'Ценности:', educational:'Воспитательная цель:', quote:'Цитата недели:', stage:'Этап / время', teacher:'Действия учителя', student:'Действия ученика', assessment:'Оценивание', ebk:'Поддержка учащихся с ООП', resources:'Ресурсы', appendices:'Материалы к уроку', appendixHelp:'Полные тексты заданий, материалы для учащихся, промпты ИИ и ключи ответов.', aiWork:'ЗАДАНИЕ С ИИ', descriptor:'Дескриптор', points:'Баллы', ebkTask:'Адаптированное задание для учащегося с ООП', ebkDescriptors:'Дескрипторы адаптированного задания', formative:'Формативное оценивание', formativeDefault:'Учитель проверяет ответы по дескрипторам, отмечает верные решения и даёт краткую обратную связь для исправления ошибки.', reflection:'Рефлексия (в конце урока):', orgName:'Название организации образования', subjectLabel:'Предмет:', unitLabel:'Раздел:', teacherName:'ФИО педагога:', classLabel:'Класс:', attending:'Количество присутствующих:', absent:'Количество отсутствующих:'},
+            en: {topic:'Lesson topic:', objective:'Learning objective:', thinking:'Bloom’s taxonomy thinking levels:', goal:'Lesson objective:', values:'Values:', educational:'Educational aim:', quote:'Quote of the week:', stage:'Stage / Time', teacher:'Teacher actions', student:'Student actions', assessment:'Assessment', ebk:'Support for students with SEN', resources:'Resources', appendices:'Lesson materials', appendixHelp:'Full task texts, student handouts, AI prompts, and answer keys.', aiWork:'AI ACTIVITY', descriptor:'Descriptor', points:'Points', ebkTask:'Adapted task for a student with SEN', ebkDescriptors:'Adapted-task descriptors', formative:'Formative assessment', formativeDefault:'The teacher checks responses against the descriptors, highlights correct answers, and gives brief feedback to address errors.', reflection:'Reflection (at the end of the lesson):', orgName:'Name of the educational organization', subjectLabel:'Subject:', unitLabel:'Unit:', teacherName:'Teacher’s name:', classLabel:'Grade:', attending:'Number of students present:', absent:'Number of students absent:'}
         };
         function getPlanLabel(key) {
             const lang = document.getElementById('outputLanguage')?.value || 'kk';
@@ -1012,8 +1014,8 @@
             const L = PLAN_LABELS[lang] || PLAN_LABELS.kk;
             const ids = {outTopic:L.topic,outObjective:L.objective,outThinkingLevels:L.thinking,outLessonGoal:L.goal,outValues:L.values,outEducationalGoal:L.educational,outWeeklyQuote:L.quote};
             Object.entries(ids).forEach(([id, value]) => { const el=document.getElementById(id); if(el && el.parentElement?.previousElementSibling) el.parentElement.previousElementSibling.textContent=value; });
-            const headers=document.querySelectorAll('#kmzhTable thead th');
-            [L.stage,L.teacher,L.student,L.assessment,L.ebk,L.resources].forEach((value,i)=>{ if(headers[i]) headers[i].textContent=value; });
+            const staticLabels = {labelOrgName:L.orgName,labelSubject:L.subjectLabel,labelUnit:L.unitLabel,labelTeacherName:L.teacherName,labelClass:L.classLabel,labelAttending:L.attending,labelAbsent:L.absent,labelStage:L.stage,labelTeacherActions:L.teacher,labelStudentActions:L.student,labelAssessment:L.assessment,labelEbk:L.ebk,labelResources:L.resources};
+            Object.entries(staticLabels).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
             const appTitle=document.querySelector('#lessonAppendices h3'); if(appTitle) appTitle.textContent=L.appendices;
             const appHelp=document.querySelector('#lessonAppendices p'); if(appHelp) appHelp.textContent=L.appendixHelp;
         }
@@ -1125,7 +1127,7 @@
 
                 // Export Document to DOCX
         function exportToWord() {
-            const topic = document.getElementById('outTopic').innerText || 'КМЖ';
+            const topic = document.getElementById('outTopic')?.innerText || 'KMZh';
             const content = document.getElementById('kmzhContainer').innerHTML;
 
             const htmlDocument = `
