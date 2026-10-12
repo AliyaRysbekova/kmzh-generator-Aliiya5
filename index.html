@@ -1,220 +1,93 @@
-ҚМЖ GENERATOR — ТІРКЕЛУДІ РАСТАУ ТУРАЛЫ ХАБАРЛАМА
+Skip to content
+AliyaRysbekova
+kmzh-generator-Aliiya5
+Repository navigation
+Code
+Issues
+Pull requests
+Actions
+Projects
+Wiki
+Security and quality
+Insights
+Settings
+Commit 4ce7921
+AliyaRysbekova
+AliyaRysbekova
+authored
+10 hours ago
+·
+·
+Verified
+Update index.html
+main
+1 parent 
+ef18190
+ commit 
+4ce7921
+1 file changed
 
-МАҢЫЗДЫ: Бұл код сайттың FRONTEND/интерфейсіне арналған. Cloudflare Worker кодының орнына қоймаңыз.
++26
+Lines changed: 26 additions & 0 deletions
+File tree
+Filter files…
+index.html
+Search within code
+ 
+‎index.html‎
++26
+Lines changed: 26 additions & 0 deletions
+Original file line number	Diff line number	Diff line change
+@@ -208,6 +208,25 @@ <h2 class="text-lg font-bold text-slate-700 border-b pb-2 flex items-center gap-
+                <input type="text" id="weeklyQuote" maxlength="500" placeholder="Мектеп ұсынған апталық дәйексөзді енгізіңіз" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <p class="text-xs text-slate-500 mt-1">Дәйексөзді енгізсеңіз, ол ҚМЖ-ға қосылады. Енгізбесеңіз, генератор өздігінен дәйексөз ойлап таппайды.</p>
+            </div>
+            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 space-y-3">
+                <label for="ownTask" class="block text-sm font-bold text-indigo-950">Өз тапсырмаңызды қосыңыз (міндетті емес)</label>
+                <textarea id="ownTask" rows="4" maxlength="8000" placeholder="Тапсырманың толық шартын, мәтінін немесе бастапқы деректерін енгізіңіз..." class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                <p class="text-xs text-slate-600">Генератор тапсырманы пәнге, сыныпқа және оқу мақсатына сәйкестігі бойынша тексеруге тырысады. Дескрипторлар осы тапсырманың нақты шарттарына негізделеді.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="ownTaskMaxScore" class="block text-sm font-semibold mb-1">Өз тапсырмаңыздың максималды балы</label>
+                        <select id="ownTaskMaxScore" class="w-full text-sm p-2 border rounded-lg">
+                            <option value="1">1 балл</option><option value="5">5 балл</option><option value="10" selected>10 балл</option>
+                        </select>
+                    </div>
+                    <label class="flex items-start gap-2 text-sm rounded-lg bg-white/70 p-2">
+                        <input id="ownTaskEbkEnabled" type="checkbox" checked class="mt-1 accent-indigo-700">
+                        <span>ЕБҚ оқушысына арналған бейімделген нұсқасы мен жеке дескрипторларын құру</span>
+                    </label>
+                </div>
+                <p class="text-xs text-slate-600">Бұл тапсырманың балы ҚМЖ-ның негізгі 10 балдық бағалауынан бөлек көрсетіледі.</p>
+            </div>
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-3">
+                <label class="flex items-start gap-2 text-sm font-semibold text-emerald-900 cursor-pointer">
+                    <input type="checkbox" id="ebkEnabled" class="mt-1 accent-emerald-600">
+@@ -1000,6 +1019,9 @@ <h2 id="authTitle" class="text-xl font-bold text-slate-800">Кіру</h2>
+                unit: v('unit'),
+                topic: v('topic'),
+                objective: v('objective'),
+                ownTask: v('ownTask'),
+                ownTaskMaxScore: Number(v('ownTaskMaxScore') || 10),
+                ownTaskEbkEnabled: document.getElementById('ownTaskEbkEnabled')?.checked ?? true,
+                thinkingLevels: Array.from(document.querySelectorAll('input[name="thinkingLevel"]:checked')).map(el => el.value),
+                weeklyQuote: v('weeklyQuote'),
+                lessonType: v('lessonType') || 'auto',
+@@ -1017,6 +1039,10 @@ <h2 id="authTitle" class="text-xl font-bold text-slate-800">Кіру</h2>
+            if (!p.unit) missing.push('бөлім');
+            if (!p.topic) missing.push('сабақ тақырыбы');
+            if (!p.objective) missing.push('оқу мақсаты');
+            if (p.ownTask.length > 8000) {
+                setStatus('Өз тапсырмаңыз 8000 таңбадан аспауы керек.', 'error');
+                return;
+            }
+            if (missing.length) {
+                setStatus('Мына өрістерді толтырыңыз: ' + missing.join(', ') + '.', 'error');
+                return;
+0 commit comments
+Comments
+0
+ (0)
+Comment
+You're not receiving notifications from this thread.
 
-ҚАЙ ЖЕРГЕ ҚОЮ КЕРЕК
-1. GitHub-та сайттың интерфейс файлын ашыңыз (көбіне index.html немесе тіркелу формасы орналасқан .jsx/.tsx файл).
-2. Қазіргі мына хабарламаны табыңыз:
-   «Тіркелгеннен кейін электрондық поштаңызды растау туралы хат келеді.»
-3. Сол ескі хабарлама блогын төмендегі HTML бөлігімен ауыстырыңыз.
-4. CSS бөлігі сол HTML файлының <head> ішіндегі <style> бөлігіне немесе сайттың негізгі CSS файлына қосылады.
-5. Кодты сақтап, сайтты жариялаған соң жаңа тест аккаунтпен тексеріңіз.
-
-HTML — ЕСКІ ХАБАРЛАМАНЫҢ ОРНЫНА ҚОЮ:
-
-<div class="email-confirmation-notice" role="alert" aria-live="polite">
-  <div class="email-confirmation-heading">
-    <span class="email-confirmation-icon" aria-hidden="true">✉️</span>
-    <h2>Тіркелу әлі аяқталған жоқ!</h2>
-  </div>
-
-  <p class="email-confirmation-intro">
-    <strong>ҚМЖ Generator-ды пайдалану үшін электрондық поштаңызды растауыңыз қажет.</strong>
-    Төмендегі 3 қадамды міндетті түрде орындаңыз:
-  </p>
-
-  <ol class="email-confirmation-steps">
-    <li>
-      <span class="email-step-number">1</span>
-      <div>
-        <strong>Осы беттен шығып, электрондық поштаңызды ашыңыз.</strong>
-        <p>Тіркелу кезінде жазған поштаңызды ашыңыз (Gmail немесе басқа пошта сервисі).</p>
-      </div>
-    </li>
-    <li>
-      <span class="email-step-number">2</span>
-      <div>
-        <strong>ҚМЖ Generator жіберген хатты табыңыз.</strong>
-        <p>Хат көрінбесе, «Спам», «Жарнамалар» немесе «Барлық хаттар» бөлімдерін тексеріңіз.</p>
-      </div>
-    </li>
-    <li>
-      <span class="email-step-number">3</span>
-      <div>
-        <strong>Хаттағы растау сілтемесін басыңыз.</strong>
-        <p>Растау сілтемесін басқаннан кейін сайтқа қайта оралып, аккаунтыңызға кіріңіз.</p>
-      </div>
-    </li>
-  </ol>
-
-  <a class="email-confirmation-gmail-button"
-     href="https://mail.google.com/"
-     target="_blank"
-     rel="noopener noreferrer">
-    Gmail поштасын ашу ↗
-  </a>
-
-  <p class="email-confirmation-note">
-    Gmail қолданбасаңыз, өзіңіздің пошта сервисіңізді ашыңыз. Растау хатын таппасаңыз,
-    тіркелу кезінде электрондық поштаңызды дұрыс енгізгеніңізді тексеріңіз.
-  </p>
-</div>
-
-
-CSS — САЙТТЫҢ НЕГІЗГІ CSS ФАЙЛЫНА НЕМЕСЕ <style> БӨЛІГІНЕ ҚОСУ:
-
-.email-confirmation-notice {
-  box-sizing: border-box;
-  width: 100%;
-  margin: 18px 0;
-  padding: 24px;
-  border: 2px solid #f0a33a;
-  border-radius: 18px;
-  background: #fffaf0;
-  color: #172033;
-  font-size: 17px;
-  line-height: 1.55;
-  text-align: left;
-  box-shadow: 0 6px 20px rgba(27, 42, 77, 0.08);
-}
-
-.email-confirmation-heading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 0 12px;
-}
-
-.email-confirmation-heading h2 {
-  margin: 0;
-  color: #9a4b00;
-  font-size: clamp(21px, 2.5vw, 27px);
-  line-height: 1.25;
-  font-weight: 800;
-}
-
-.email-confirmation-icon {
-  display: inline-flex;
-  flex: 0 0 42px;
-  width: 42px;
-  height: 42px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: #ffedc9;
-  font-size: 25px;
-}
-
-.email-confirmation-intro {
-  margin: 8px 0 18px;
-  font-size: 17px;
-}
-
-.email-confirmation-steps {
-  display: grid;
-  gap: 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.email-confirmation-steps li {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid #f4d7a7;
-  border-radius: 12px;
-  background: #ffffff;
-}
-
-.email-step-number {
-  display: inline-flex;
-  flex: 0 0 34px;
-  width: 34px;
-  height: 34px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #3156c8;
-  color: #ffffff;
-  font-size: 17px;
-  font-weight: 800;
-}
-
-.email-confirmation-steps strong {
-  display: block;
-  margin: 1px 0 3px;
-  font-size: 17px;
-}
-
-.email-confirmation-steps p {
-  margin: 0;
-  color: #465064;
-  font-size: 15px;
-}
-
-.email-confirmation-gmail-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  margin-top: 18px;
-  padding: 12px 20px;
-  border-radius: 10px;
-  background: #3156c8;
-  color: #ffffff !important;
-  font-size: 16px;
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.email-confirmation-gmail-button:hover {
-  background: #2445a8;
-}
-
-.email-confirmation-note {
-  margin: 16px 0 0;
-  padding-top: 14px;
-  border-top: 1px solid #ead9bf;
-  color: #5b6474;
-  font-size: 14px;
-}
-
-@media (max-width: 600px) {
-  .email-confirmation-notice {
-    padding: 17px;
-    border-radius: 14px;
-    font-size: 16px;
-  }
-
-  .email-confirmation-heading h2 {
-    font-size: 21px;
-  }
-
-  .email-confirmation-steps li {
-    gap: 10px;
-    padding: 11px;
-  }
-
-  .email-confirmation-steps strong {
-    font-size: 16px;
-  }
-
-  .email-confirmation-steps p {
-    font-size: 14px;
-  }
-
-  .email-confirmation-gmail-button {
-    display: flex;
-    width: 100%;
-    box-sizing: border-box;
-  }
-}
-
-
-ТЕКСТ, КОТОРЫЙ ДОЛЖЕН ВИДЕТЬ УЧИТЕЛЬ:
-«Тіркелу әлі аяқталған жоқ! ҚМЖ Generator-ды пайдалану үшін электрондық поштаңызды растауыңыз қажет. Поштаңызды ашыңыз → ҚМЖ Generator жіберген хатты табыңыз → хаттағы растау сілтемесін басыңыз → сайтқа қайта оралып, аккаунтыңызға кіріңіз.»
-
-ЕСКЕРТУ:
-Бұл код тек хабарламаның көрінісін жақсартады. Ол растау хатын жіберу немесе Supabase аутентификациясын өзгертпейді. Сайт құрылымына қарай HTML блогын ескі хабарлама көрсетілетін компонентке қою қажет. Жарияламас бұрын жаңа тест аккаунтпен тіркелуді тексеріңіз.
