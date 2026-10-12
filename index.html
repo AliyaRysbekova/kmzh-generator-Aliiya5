@@ -163,6 +163,21 @@
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Оқу мақсаты (ОМ)</label>
                 <textarea id="objective" rows="2" placeholder="Мысалы: 10.5.1.2 нәруыздардың біріншілік, екіншілік, үшіншілік және төртіншілік құрылымдарын сипаттау" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
             </div>
+            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 space-y-3" id="ownTaskPanel">
+                <label for="ownTask" class="block text-sm font-bold text-indigo-950">Өз тапсырмаңызды қосыңыз (міндетті емес)</label>
+                <p class="text-xs text-indigo-900">Тапсырманың толық шартын, мәтінін немесе бастапқы деректерін енгізіңіз. Генератор оған жеке дескрипторлар құрастырады.</p>
+                <textarea id="ownTask" rows="4" maxlength="8000" placeholder="Тапсырманың толық шартын, мәтінін немесе бастапқы деректерін енгізіңіз..." class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                <label for="ownTaskMaxScore" class="block text-sm font-semibold text-indigo-950">Максималды балл</label>
+                <select id="ownTaskMaxScore" class="w-full text-sm p-2 border rounded-lg">
+                    <option value="1">1 балл</option>
+                    <option value="5">5 балл</option>
+                    <option value="10" selected>10 балл</option>
+                </select>
+                <label class="flex items-start gap-2 text-sm text-indigo-950">
+                    <input id="ownTaskEbkEnabled" type="checkbox" checked class="mt-1">
+                    <span>ЕБҚ оқушысына бейімделген тапсырма және дескрипторлар құру</span>
+                </label>
+            </div>
             <div class="rounded-xl border border-amber-200 bg-amber-50/70 p-3 space-y-3" id="bloomLevelsPanel">
                 <div>
                     <label class="block text-sm font-bold text-amber-950 mb-1">Блум таксономиясы бойынша ойлау деңгейлері</label>
@@ -208,25 +223,6 @@
                 <input type="text" id="weeklyQuote" maxlength="500" placeholder="Мектеп ұсынған апталық дәйексөзді енгізіңіз" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 <p class="text-xs text-slate-500 mt-1">Дәйексөзді енгізсеңіз, ол ҚМЖ-ға қосылады. Енгізбесеңіз, генератор өздігінен дәйексөз ойлап таппайды.</p>
             </div>
-            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 space-y-3">
-                <label for="ownTask" class="block text-sm font-bold text-indigo-950">Өз тапсырмаңызды қосыңыз (міндетті емес)</label>
-                <textarea id="ownTask" rows="4" maxlength="8000" placeholder="Тапсырманың толық шартын, мәтінін немесе бастапқы деректерін енгізіңіз..." class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-                <p class="text-xs text-slate-600">Генератор тапсырманы пәнге, сыныпқа және оқу мақсатына сәйкестігі бойынша тексеруге тырысады. Дескрипторлар осы тапсырманың нақты шарттарына негізделеді.</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label for="ownTaskMaxScore" class="block text-sm font-semibold mb-1">Өз тапсырмаңыздың максималды балы</label>
-                        <select id="ownTaskMaxScore" class="w-full text-sm p-2 border rounded-lg">
-                            <option value="1">1 балл</option><option value="5">5 балл</option><option value="10" selected>10 балл</option>
-                        </select>
-                    </div>
-                    <label class="flex items-start gap-2 text-sm rounded-lg bg-white/70 p-2">
-                        <input id="ownTaskEbkEnabled" type="checkbox" checked class="mt-1 accent-indigo-700">
-                        <span>ЕБҚ оқушысына арналған бейімделген нұсқасы мен жеке дескрипторларын құру</span>
-                    </label>
-                </div>
-                <p class="text-xs text-slate-600">Бұл тапсырманың балы ҚМЖ-ның негізгі 10 балдық бағалауынан бөлек көрсетіледі.</p>
-            </div>
-
             <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-3">
                 <label class="flex items-start gap-2 text-sm font-semibold text-emerald-900 cursor-pointer">
                     <input type="checkbox" id="ebkEnabled" class="mt-1 accent-emerald-600">
@@ -417,7 +413,8 @@
                     <label for="authConfirmPassword" class="block text-sm font-semibold text-slate-700 mb-1">Құпиясөзді қайталаңыз</label>
                     <input id="authConfirmPassword" type="password" autocomplete="new-password" minlength="8" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Құпиясөзді қайталаңыз">
                 </div>
-                <div id="authStatus" class="hidden rounded-lg border px-3 py-2.5 text-sm" role="status" aria-live="polite"></div>
+                <div id="authStatus" class="hidden rounded-xl border-2 px-4 py-4 text-base font-semibold leading-relaxed" role="status" aria-live="polite"></div>
+                <a id="authOpenMailBtn" href="https://mail.google.com/" target="_blank" rel="noopener noreferrer" class="hidden w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 text-center">📩 Gmail поштасын ашу</a>
                 <button id="authSubmitBtn" type="submit" class="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold py-2.5">Кіру</button>
                 <button id="authResetBtn" type="button" onclick="sendPasswordReset()" class="w-full text-sm text-indigo-700 hover:underline">Құпиясөзді ұмыттыңыз ба?</button>
                 <p id="authFooterNote" class="text-xs text-slate-500 leading-relaxed">Тіркелген кезде электрондық поштаңызды растау үшін хат жіберіледі.</p>
@@ -518,7 +515,9 @@
         const METHODS = `Жүгірмелі сөйлемдер – қабырғадағы сөйлемдерді оқып, топқа жеткізу; Үштіктер – 3 оқушы: айтушы, сұрақ қоюшы, бағалаушы; Домино – сұрақ пен жауап қималарын сәйкестендіру; Лото – қоржыннан нөмір/сұрақ алу; Бір картина – парақты айналдырып ой жазу; 3х3 – 9 торлы кестеден термин таңдап түсіндіру; Мұғалімге сұрақ – оқушы сұрақ құрастырады; Тиын – тиын лақтырып сұрақ қою; Құпиясы бар қорап – қорапшадан сұрақ алу; Блиц-сұрау – терминді айтпай түсіндіру; Бинго – 9 термин, сұрақ бойынша сызу; Карталар – сұрақ-жауап карталарын алмасу; Қарама-қарсы сұрақтар – екі топ бір-біріне сұрақ қояды; Алфавит – әріптен басталатын термин айту; Иә-жоқ – тұжырымға қарай бұрылу; 6 қалпақ – 6 рөлде талқылау; Бір минуттық эссе; Қағып ал! – анықтамаға сай термин карточкасын қағып алу; Модерация – идеяларды стикерге жазу; Стоп-кадр – видеоны тоқтатып сұрақ қою; Сөйлем қос – мәтінді кезекпен жалғастыру; Бүктелген қағаз – сұрақ жазып алмасу; Эксперт бұрышы – эксперт оқушы көмектеседі; Керемет қабырға – сұрақтарды қабырғаға жазу; Кір жаю – түсінгенін жіпке ілу; Төрт бұрыш – A,B,C,D бұрышын таңдау; Қос шеңбер – ішкі/сыртқы шеңбер жұптасу; Сигнал карталары – карта көтеріп жауап беру; RAFT – рөл, аудитория, формат, тақырып; Үш минуттық пауза – үнсіз ойланып жазу; Ойлан-Жұптас-Бөліс – жеке, жұппен, топпен`;
 
         function resetForm() {
-            ['subject','unit','topic','objective','weeklyQuote','ebkOther'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            ['subject','unit','topic','objective','weeklyQuote','ebkOther','ownTask'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            document.getElementById('ownTaskMaxScore').value = '10';
+            document.getElementById('ownTaskEbkEnabled').checked = true;
             document.getElementById('grade').value = '';
             document.getElementById('lessonType').value = 'auto';
             document.getElementById('subjectCategory').value = 'auto';
@@ -782,6 +781,22 @@
                 if (typeof a === 'string') addAppendix(`Қосымша ${i+1}`, a);
                 else if (a && typeof a === 'object') addAppendix(textOf(a.title || a.name) || `Қосымша ${i+1}`, a.content || a.text || a.body || a.prompt || a.task || a.description);
             });
+            if (d.ownTaskAssessment && typeof d.ownTaskAssessment === 'object') {
+                const own = d.ownTaskAssessment;
+                const descriptorLines = (items) => (Array.isArray(items) ? items : [])
+                    .map((item, i) => `${i + 1}. ${textOf(item.text || item.description)} — ${Number(item.points) || 0} балл`)
+                    .join('\\n');
+                const ownText = [
+                    `Мұғалімнің тапсырмасы: ${textOf(own.task)}`,
+                    `Сәйкестігі: ${textOf(own.alignment)}`,
+                    own.warning ? `Ескерту: ${textOf(own.warning)}` : '',
+                    `Максималды балл: ${Number(own.maxScore) || 0}`,
+                    'Дескрипторлар:',
+                    descriptorLines(own.descriptors),
+                    own.ebk && own.ebk.enabled ? `ЕБҚ бейімделген тапсырмасы: ${textOf(own.ebk.task)}\\nЕБҚ дескрипторлары:\\n${descriptorLines(own.ebk.descriptors)}` : ''
+                ].filter(Boolean).join('\\n\\n');
+                appendixItems.push({ title: 'Мұғалімнің өз тапсырмасы және дескрипторлары', content: ownText, stage: '' });
+            }
             const appendixSection = document.getElementById('lessonAppendices');
             const appendixContent = document.getElementById('appendicesContent');
             if (appendixItems.length) {
@@ -1020,7 +1035,7 @@
                 topic: v('topic'),
                 objective: v('objective'),
                 ownTask: v('ownTask'),
-                ownTaskMaxScore: Number(v('ownTaskMaxScore') || 10),
+                ownTaskMaxScore: Number(document.getElementById('ownTaskMaxScore')?.value || 10),
                 ownTaskEbkEnabled: document.getElementById('ownTaskEbkEnabled')?.checked ?? true,
                 thinkingLevels: Array.from(document.querySelectorAll('input[name="thinkingLevel"]:checked')).map(el => el.value),
                 weeklyQuote: v('weeklyQuote'),
@@ -1039,10 +1054,6 @@
             if (!p.unit) missing.push('бөлім');
             if (!p.topic) missing.push('сабақ тақырыбы');
             if (!p.objective) missing.push('оқу мақсаты');
-            if (p.ownTask.length > 8000) {
-                setStatus('Өз тапсырмаңыз 8000 таңбадан аспауы керек.', 'error');
-                return;
-            }
             if (missing.length) {
                 setStatus('Мына өрістерді толтырыңыз: ' + missing.join(', ') + '.', 'error');
                 return;
@@ -1251,19 +1262,31 @@
 
         function setAuthStatus(message, kind = 'info') {
             const el = document.getElementById('authStatus');
+            const mailButton = document.getElementById('authOpenMailBtn');
             if (!el) return;
             if (!message) {
-                el.className = 'hidden rounded-lg border px-3 py-2.5 text-sm';
+                el.className = 'hidden rounded-xl border-2 px-4 py-4 text-base font-semibold leading-relaxed';
                 el.textContent = '';
+                if (mailButton) mailButton.classList.add('hidden');
                 return;
             }
+            const isEmailConfirmation = authMode === 'signup' && kind === 'success' && /растау сілтемесін/i.test(message);
             const palette = {
                 info: 'border-blue-200 bg-blue-50 text-blue-800',
                 success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
                 error: 'border-red-200 bg-red-50 text-red-800'
             };
-            el.className = `rounded-lg border px-3 py-2.5 text-sm ${palette[kind] || palette.info}`;
+            el.className = isEmailConfirmation
+                ? 'rounded-xl border-2 border-emerald-300 bg-emerald-50 text-emerald-950 px-4 py-4 text-base sm:text-lg font-semibold leading-relaxed whitespace-pre-line shadow-sm'
+                : `rounded-lg border px-3 py-2.5 text-sm ${palette[kind] || palette.info}`;
             el.textContent = message;
+            if (mailButton) mailButton.classList.toggle('hidden', !isEmailConfirmation);
+            if (isEmailConfirmation) {
+                el.setAttribute('aria-live', 'assertive');
+                window.setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+            } else {
+                el.setAttribute('aria-live', 'polite');
+            }
         }
 
         let generationBalanceRequestInFlight = false;
@@ -1365,9 +1388,16 @@
                 ? 'Аккаунтты аяқтау үшін жаңа құпиясөз орнатыңыз.'
                 : (signupMode ? 'Электрондық пошта арқылы жаңа аккаунт жасаңыз.' : 'ҚМЖ генераторына аккаунтыңыз арқылы кіріңіз.');
             document.getElementById('authSubmitBtn').textContent = updatePasswordMode ? 'Құпиясөзді сақтау' : (signupMode ? 'Тіркелу' : 'Кіру');
-            document.getElementById('authFooterNote').textContent = updatePasswordMode
-                ? 'Құпиясөз кемінде 8 таңбадан тұруы керек.'
-                : (signupMode ? 'Тіркелгеннен кейін электрондық поштаңызды растау туралы хат келеді.' : 'Аккаунтыңыз жоқ па? «Тіркелу» батырмасын таңдаңыз.');
+            const footerNote = document.getElementById('authFooterNote');
+            if (signupMode) {
+                footerNote.className = 'mt-3 rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-sm sm:text-base font-semibold leading-relaxed text-amber-950';
+                footerNote.textContent = '📩 МАҢЫЗДЫ! Тіркелгеннен кейін электрондық поштаңызды ашыңыз да, ҚМЖ Generator жіберген хаттағы растау сілтемесін басыңыз. Хат көрінбесе, «Спам» немесе «Жарнамалар» бумасын тексеріңіз.';
+            } else {
+                footerNote.className = 'mt-2 text-xs text-slate-500 leading-relaxed';
+                footerNote.textContent = updatePasswordMode
+                    ? 'Құпиясөз кемінде 8 таңбадан тұруы керек.'
+                    : 'Аккаунтыңыз жоқ па? «Тіркелу» батырмасын таңдаңыз.';
+            }
         }
 
         function openAuthModal(mode = 'login') {
@@ -1436,7 +1466,7 @@
                         setAuthStatus('Аккаунт сәтті құрылды. Қош келдіңіз!', 'success');
                         window.setTimeout(closeAuthModal, 1200);
                     } else {
-                        setAuthStatus('Тіркелу сұранысы қабылданды. Электрондық поштаңызды ашып, растау сілтемесін басыңыз. Спам бумасын да тексеріңіз.', 'success');
+                        setAuthStatus('✅ ТІРКЕЛУ ҚАБЫЛДАНДЫ!\n\n1. Электрондық поштаңызды ашыңыз.\n2. ҚМЖ Generator жіберген хаттағы растау сілтемесін басыңыз.\n3. Осы сайтқа қайта оралып, аккаунтыңызға кіріңіз.\n\nХат көрінбесе, «Спам» немесе «Жарнамалар» бумасын тексеріңіз.', 'success');
                     }
                 } else if (authMode === 'login') {
                     const { data, error } = await supabaseAuthClient.auth.signInWithPassword({ email, password });
