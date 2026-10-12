@@ -208,6 +208,25 @@
                 <input type="text" id="weeklyQuote" maxlength="500" placeholder="Мектеп ұсынған апталық дәйексөзді енгізіңіз" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 <p class="text-xs text-slate-500 mt-1">Дәйексөзді енгізсеңіз, ол ҚМЖ-ға қосылады. Енгізбесеңіз, генератор өздігінен дәйексөз ойлап таппайды.</p>
             </div>
+            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 space-y-3">
+                <label for="ownTask" class="block text-sm font-bold text-indigo-950">Өз тапсырмаңызды қосыңыз (міндетті емес)</label>
+                <textarea id="ownTask" rows="4" maxlength="8000" placeholder="Тапсырманың толық шартын, мәтінін немесе бастапқы деректерін енгізіңіз..." class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                <p class="text-xs text-slate-600">Генератор тапсырманы пәнге, сыныпқа және оқу мақсатына сәйкестігі бойынша тексеруге тырысады. Дескрипторлар осы тапсырманың нақты шарттарына негізделеді.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="ownTaskMaxScore" class="block text-sm font-semibold mb-1">Өз тапсырмаңыздың максималды балы</label>
+                        <select id="ownTaskMaxScore" class="w-full text-sm p-2 border rounded-lg">
+                            <option value="1">1 балл</option><option value="5">5 балл</option><option value="10" selected>10 балл</option>
+                        </select>
+                    </div>
+                    <label class="flex items-start gap-2 text-sm rounded-lg bg-white/70 p-2">
+                        <input id="ownTaskEbkEnabled" type="checkbox" checked class="mt-1 accent-indigo-700">
+                        <span>ЕБҚ оқушысына арналған бейімделген нұсқасы мен жеке дескрипторларын құру</span>
+                    </label>
+                </div>
+                <p class="text-xs text-slate-600">Бұл тапсырманың балы ҚМЖ-ның негізгі 10 балдық бағалауынан бөлек көрсетіледі.</p>
+            </div>
+
             <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-3">
                 <label class="flex items-start gap-2 text-sm font-semibold text-emerald-900 cursor-pointer">
                     <input type="checkbox" id="ebkEnabled" class="mt-1 accent-emerald-600">
@@ -1000,6 +1019,9 @@
                 unit: v('unit'),
                 topic: v('topic'),
                 objective: v('objective'),
+                ownTask: v('ownTask'),
+                ownTaskMaxScore: Number(v('ownTaskMaxScore') || 10),
+                ownTaskEbkEnabled: document.getElementById('ownTaskEbkEnabled')?.checked ?? true,
                 thinkingLevels: Array.from(document.querySelectorAll('input[name="thinkingLevel"]:checked')).map(el => el.value),
                 weeklyQuote: v('weeklyQuote'),
                 lessonType: v('lessonType') || 'auto',
@@ -1017,6 +1039,10 @@
             if (!p.unit) missing.push('бөлім');
             if (!p.topic) missing.push('сабақ тақырыбы');
             if (!p.objective) missing.push('оқу мақсаты');
+            if (p.ownTask.length > 8000) {
+                setStatus('Өз тапсырмаңыз 8000 таңбадан аспауы керек.', 'error');
+                return;
+            }
             if (missing.length) {
                 setStatus('Мына өрістерді толтырыңыз: ' + missing.join(', ') + '.', 'error');
                 return;
