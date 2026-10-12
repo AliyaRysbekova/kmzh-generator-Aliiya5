@@ -1,1550 +1,220 @@
-<!DOCTYPE html>
-<html lang="kk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ҚМЖ Generator — әдістемелік көмекші V37</title>
-    <!-- V37: adds 15 cross-curricular AI/digital tool checkboxes and sends selections to the Worker. V36 formatting retained. -->
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS: public publishable key only; no secret/service_role key is placed in the browser. -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Cloudflare Turnstile: anti-bot check; configure site key below -->
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
-    <!-- html2docx CDN for DOCX Export -->
-    <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.min.js"></script>
-    <!-- FileSaver CDN for saving files -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-    <style>
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white !important; font-size: 12pt; }
-            .print-area { width: 100% !important; margin: 0 !important; shadow: none !important; border: none !important; }
-        }
-        table, th, td { border: 1px solid #cbd5e1; border-collapse: collapse; }
-        .descriptor-table th, .descriptor-table td { border: 1px solid #d6dbe5; padding: 5px 7px; vertical-align: top; }
-        .descriptor-table th { background: #eef2ff; color: #3730a3; }
-        .visual-card { background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%); border: 1px solid #c7d2fe; border-radius: 8px; padding: 8px; margin-top: 7px; }
-        .task-content { line-height: 1.5; overflow-wrap: anywhere; }
-            .ebk-task-box { margin-top: 10px; padding: 10px; border: 1.5px solid #fbbf24; border-radius: 10px; background: #fffbeb; font-size: 12px; }
-        .ebk-task-box > strong { color: #92400e; }
-        .formative-assessment { margin-top: 10px; padding: 8px; border: 1px solid #86efac; border-radius: 8px; background: #f0fdf4; font-size: 11px; line-height: 1.4; white-space: normal; }
-        .formative-assessment strong { color: #166534; display: block; margin-bottom: 3px; }
-        .plan-action-list { line-height: 1.55; overflow-wrap: anywhere; }
-        .plan-action-block { margin: 0 0 10px 0; padding: 0 0 8px 0; border-bottom: 1px solid #e2e8f0; }
-        .plan-action-block:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
-        .work-form-label { display: inline-block; margin: 1px 3px 4px 0; padding: 3px 8px; border-radius: 6px; background: #e0e7ff; color: #312e81; font-size: 13px; line-height: 1.35; font-weight: 900; letter-spacing: .025em; }
-        .task-number-label { display: inline-block; margin: 2px 0 5px; padding: 3px 8px; border-radius: 6px; background: #fef3c7; color: #92400e; font-size: 14px; line-height: 1.4; font-weight: 900; }
-        .task-condition-label { color: #334155; font-weight: 800; }
-        .ai-work-box { margin: 9px 0 11px; padding: 11px 12px; border: 2px solid #7c3aed; border-left-width: 6px; border-radius: 10px; background: #f5f3ff; color: #312e81; line-height: 1.55; break-inside: avoid; }
-        .ai-work-heading { display: block; font-size: 24px; font-weight: 950; letter-spacing: .06em; line-height: 1.2; margin: 0 0 9px; color: #5b21b6; text-transform: uppercase; }
-        @media (max-width: 640px) { .ai-work-heading { font-size: 22px; } }
-        .ai-work-body > .plan-action-block { border-bottom-color: #ddd6fe; }
-        @media print { .work-form-label { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .ai-work-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-</style>
-</head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
-
-    <!-- Header -->
-    <header class="bg-indigo-700 text-white py-4 shadow-md no-print">
-        <div class="max-w-7xl mx-auto px-4 flex flex-wrap justify-between items-center gap-3">
-            <div class="flex items-center space-x-3 min-w-0">
-                <i class="fa-solid fa-file-pen text-2xl text-yellow-300"></i>
-                <div class="min-w-0">
-                    <h1 class="text-xl font-bold">ҚМЖ Generator</h1>
-                    <p class="text-xs text-indigo-200">Оқу мақсатына сай ҚМЖ • жұмыс формалары • ЖИ кіріктіру • дескрипторлар • ЕБҚ қолдауы</p>
-                </div>
-            </div>
-            <div id="authControls" class="flex items-center gap-2 shrink-0">
-                <span id="authUserLabel" class="hidden max-w-[190px] truncate text-xs text-indigo-100" aria-live="polite"></span>
-                <span id="generationBalance" class="hidden rounded-lg bg-indigo-600 border border-indigo-400 px-2 py-1.5 text-xs text-white whitespace-nowrap" aria-live="polite"></span>
-                <button id="buyPackagesBtn" type="button" onclick="openPackageModal()" class="hidden rounded-lg bg-yellow-300 hover:bg-yellow-200 text-indigo-950 font-bold text-xs sm:text-sm px-3 py-2 shadow-sm whitespace-nowrap"><i class="fa-solid fa-cart-shopping mr-1"></i>Пакет сатып алу</button>
-                <button id="openAuthBtn" type="button" onclick="openAuthModal('login')" class="rounded-lg bg-white text-indigo-700 hover:bg-indigo-50 font-semibold text-xs sm:text-sm px-3 py-2 shadow-sm">Кіру / Тіркелу</button>
-                <button id="logoutBtn" type="button" onclick="logoutUser()" class="hidden rounded-lg border border-indigo-300 text-white hover:bg-indigo-600 font-semibold text-xs sm:text-sm px-3 py-2">Шығу</button>
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        <!-- Form Section -->
-        <section class="lg:col-span-4 bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4 no-print h-fit">
-            <h2 class="text-lg font-bold text-slate-700 border-b pb-2 flex items-center gap-2">
-                <i class="fa-solid fa-sliders text-indigo-600"></i> Сабақ параметрлері
-            </h2>
-            <p class="text-xs text-slate-500 leading-relaxed">Негізгі 5 өрісті толтырыңыз. ҚМЖ ішінде әр тапсырманың жұмыс формасы, оқу мақсатына сай ЖИ кіріктіру, бағалау дескрипторлары және тәрбиелік мақсат көрсетіледі.</p>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Пән атауы</label>
-                <input type="text" id="subject" placeholder="Мысалы: Биология, Химия, Физика..." class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Сынып</label>
-                    <select id="grade" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                        <option value="" selected disabled>Таңдаңыз</option>
-                        <option value="1">1-сынып</option>
-                        <option value="2">2-сынып</option>
-                        <option value="3">3-сынып</option>
-                        <option value="4">4-сынып</option>
-                        <option value="5">5-сынып</option>
-                        <option value="6">6-сынып</option>
-                        <option value="7">7-сынып</option>
-                        <option value="8">8-сынып</option>
-                        <option value="9">9-сынып</option>
-                        <option value="10">10-сынып</option>
-                        <option value="11">11-сынып</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Бөлім атауы</label>
-                    <input type="text" id="unit" placeholder="Мысалы: Молекулалық биология" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Сабақтың тақырыбы</label>
-                <input type="text" id="topic" placeholder="Мысалы: Нәруыздың құрылымы мен қызметі" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            </div>
-
-            <input type="hidden" id="outputLanguage" value="kk">
-
-            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 space-y-2">
-                <label for="lessonType" class="block text-xs font-semibold text-slate-700 mb-1">Жалпы сабақ форматы</label>
-                <select id="lessonType" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                    <option value="auto" selected>Автоматты таңдау — оқу мақсатына қарай</option>
-                    <option value="new">Жаңа білімді меңгеру</option>
-                    <option value="practice">Бекіту және білімді қолдану</option>
-                    <option value="problem">Проблемалық сабақ</option>
-                    <option value="research">Зерттеушілік сабақ / тәжірибе (пәнге сай болса)</option>
-                    <option value="pisa">Функционалдық сауаттылық (PISA)</option>
-                    <option value="stem">STEM/STEAM жобасы</option>
-                    <option value="project">Жобалық сабақ</option>
-                    <option value="discussion">Пікірталас және дәлелдеу</option>
-                    <option value="case">Кейс / өмірлік жағдаятты талдау</option>
-                    <option value="stations">Сабақ станциялары</option>
-                    <option value="error_analysis">Қателерді талдау</option>
-                    <option value="peer">Өзара оқыту және түсіндіру</option>
-                </select>
-                <p class="text-xs text-slate-500">Бұл — барлық пәнге ортақ формат. Гуманитарлық пәндерде зертханалық тәжірибе автоматты түрде ұсынылмайды.</p>
-            </div>
-
-            <div class="rounded-xl border border-teal-200 bg-teal-50/60 p-3 space-y-2" id="subjectApproachPanel">
-                <div>
-                    <label for="subjectCategory" class="block text-xs font-semibold text-teal-950 mb-1">Пән бағыты</label>
-                    <select id="subjectCategory" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
-                        <option value="auto" selected>Пән атауы бойынша автоматты анықтау</option>
-                        <option value="language">Тіл пәндері</option>
-                        <option value="literature">Әдебиет</option>
-                        <option value="history">Тарих</option>
-                        <option value="natural">Жаратылыстану (биология, химия, физика)</option>
-                        <option value="math">Математика</option>
-                        <option value="geography">География</option>
-                        <option value="informatics">Информатика / цифрлық технология</option>
-                        <option value="arts">Өнер / технология</option>
-                        <option value="social">Қоғамдық пәндер</option>
-                        <option value="other">Басқа пән</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="subjectApproach" class="block text-xs font-semibold text-teal-950 mb-1">Пәнге тән дағды немесе жұмыс форматы</label>
-                    <select id="subjectApproach" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
-                        <option value="auto">Оқу мақсатына қарай автоматты таңдау</option>
-                    </select>
-                </div>
-                <p id="subjectApproachHelp" class="text-xs text-teal-900">Пән атауын енгізіңіз. Ұсыныстар пән бағытына сай өзгереді; нақты таңдау жасасаңыз, генератор оны ҚМЖ мазмұнына енгізеді.</p>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Оқу мақсаты (ОМ)</label>
-                <textarea id="objective" rows="2" placeholder="Мысалы: 10.5.1.2 нәруыздардың біріншілік, екіншілік, үшіншілік және төртіншілік құрылымдарын сипаттау" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-            </div>
-            <div class="rounded-xl border border-amber-200 bg-amber-50/70 p-3 space-y-3" id="bloomLevelsPanel">
-                <div>
-                    <label class="block text-sm font-bold text-amber-950 mb-1">Блум таксономиясы бойынша ойлау деңгейлері</label>
-                    <p class="text-xs text-amber-900 leading-relaxed">Бір немесе бірнеше деңгейді таңдаңыз. Таңдауыңыз сабақ мақсатына, тапсырмалардың күрделілігіне және дескрипторларға әсер етеді. Ештеңе таңдалмаса, генератор оқу мақсатының етістігіне қарай деңгей(лер)ді өзі анықтайды.</p>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2 text-sm text-slate-700">
-                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Білу / еске түсіру" class="mt-1 accent-amber-700"><span><strong>Білу / еске түсіру</strong><small class="block text-xs text-slate-500">Атайды, таниды, еске түсіреді</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Түсіну" class="mt-1 accent-amber-700"><span><strong>Түсіну</strong><small class="block text-xs text-slate-500">Түсіндіреді, сипаттайды, мысал келтіреді</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Қолдану" class="mt-1 accent-amber-700"><span><strong>Қолдану</strong><small class="block text-xs text-slate-500">Қолданады, есептейді, орындайды</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Талдау" class="mt-1 accent-amber-700"><span><strong>Талдау</strong><small class="block text-xs text-slate-500">Салыстырады, жіктейді, талдайды</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Жинақтау / синтездеу" class="mt-1 accent-amber-700"><span><strong>Жинақтау / синтездеу</strong><small class="block text-xs text-slate-500">Жинақтайды, біріктіреді, жүйелейді, қорытынды жасайды</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/90 border border-amber-100 p-2"><input type="checkbox" name="thinkingLevel" value="Бағалау / пайымдау" class="mt-1 accent-amber-700"><span><strong>Бағалау / пайымдау</strong><small class="block text-xs text-slate-500">Бағалайды, критериймен тексереді, дәлелдейді, негіздейді</small></span></label>
-                </div>
-            </div>
-
-            <div class="rounded-xl border border-violet-200 bg-violet-50/70 p-3 space-y-3" id="aiToolsPanel">
-                <div>
-                    <label class="block text-sm font-bold text-violet-950 mb-1">ЖИ және цифрлық құралдар</label>
-                    <p class="text-xs text-violet-800 leading-relaxed">Барлық пәнге жарамды ЖИ және цифрлық құралдар. Бірнешеуін таңдауға болады. ҚМЖ-да оқу мақсатына сәйкес бір құралмен нақты әрекет ұсынылады. Интерактивті платформа таңдалса, тапсырма сол платформада орындалады. Ештеңе таңдалмаса, генератор өзі таңдайды.</p>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2 text-sm text-slate-700">
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="ChatGPT" class="mt-1 accent-violet-700"><span><strong>ChatGPT</strong><small class="block text-xs text-slate-500">Идея, сұрақ, түсіндірме, саралау</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Google Gemini" class="mt-1 accent-violet-700"><span><strong>Google Gemini</strong><small class="block text-xs text-slate-500">Мәтін, сурет және дерекпен жұмыс</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Microsoft Copilot" class="mt-1 accent-violet-700"><span><strong>Microsoft Copilot</strong><small class="block text-xs text-slate-500">Түсіндіру, сұрақтар, мәтін дайындау</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Claude" class="mt-1 accent-violet-700"><span><strong>Claude</strong><small class="block text-xs text-slate-500">Мәтінді талдау, кері байланыс</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="DeepSeek" class="mt-1 accent-violet-700"><span><strong>DeepSeek</strong><small class="block text-xs text-slate-500">Талдау, шешім мен дәлелді салыстыру</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Wordwall" class="mt-1 accent-violet-700"><span><strong>Wordwall</strong><small class="block text-xs text-slate-500">Интерактивті ойындар, жаттығулар және қайталау</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="LearningApps" class="mt-1 accent-violet-700"><span><strong>LearningApps</strong><small class="block text-xs text-slate-500">Интерактивті сәйкестендіру, жіктеу және жаттығулар</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Padlet" class="mt-1 accent-violet-700"><span><strong>Padlet</strong><small class="block text-xs text-slate-500">Ортақ тақта, идея жинау және топтық пікір алмасу</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Canva AI" class="mt-1 accent-violet-700"><span><strong>Canva AI</strong><small class="block text-xs text-slate-500">Инфографика, көрнекілік, слайд</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Kahoot! AI" class="mt-1 accent-violet-700"><span><strong>Kahoot! AI</strong><small class="block text-xs text-slate-500">Ойын түріндегі сұрақтар мен викторина</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Wayground (Quizizz) AI" class="mt-1 accent-violet-700"><span><strong>Wayground (Quizizz) AI</strong><small class="block text-xs text-slate-500">Тест пен қалыптастырушы бағалау</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Quizlet AI" class="mt-1 accent-violet-700"><span><strong>Quizlet AI</strong><small class="block text-xs text-slate-500">Карточкалар, терминдер, қайталау</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Mentimeter" class="mt-1 accent-violet-700"><span><strong>Mentimeter</strong><small class="block text-xs text-slate-500">Сауалнама, сөз бұлты және жедел кері байланыс</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="EducaPlay" class="mt-1 accent-violet-700"><span><strong>Educaplay</strong><small class="block text-xs text-slate-500">Интерактивті сөзжұмбақтар, викториналар мен жаттығулар</small></span></label>
-                    <label class="flex items-start gap-2 rounded-lg bg-white/80 border border-violet-100 p-2"><input type="checkbox" name="aiTool" value="Blooket" class="mt-1 accent-violet-700"><span><strong>Blooket</strong><small class="block text-xs text-slate-500">Ойын арқылы білімді бекіту және қайталау</small></span></label>
-                </div>
-                <p class="text-xs text-slate-500">Ескерту: аккаунт пен интернет қажет болуы мүмкін. ЖИ ұсынған жауапты оқулықпен, дерекпен немесе пәндік критериймен тексеріңіз.</p>
-            </div>
-
-            <div>
-                <label for="weeklyQuote" class="block text-xs font-semibold text-slate-600 mb-1">Аптаның дәйексөзі (міндетті емес)</label>
-                <input type="text" id="weeklyQuote" maxlength="500" placeholder="Мектеп ұсынған апталық дәйексөзді енгізіңіз" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                <p class="text-xs text-slate-500 mt-1">Дәйексөзді енгізсеңіз, ол ҚМЖ-ға қосылады. Енгізбесеңіз, генератор өздігінен дәйексөз ойлап таппайды.</p>
-            </div>
-            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 space-y-3">
-                <label for="ownTask" class="block text-sm font-bold text-indigo-950">Өз тапсырмаңызды қосыңыз (міндетті емес)</label>
-                <textarea id="ownTask" rows="4" maxlength="8000" placeholder="Тапсырманың толық шартын, мәтінін немесе бастапқы деректерін енгізіңіз..." class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-                <p class="text-xs text-slate-600">Генератор тапсырманы пәнге, сыныпқа және оқу мақсатына сәйкестігі бойынша тексеруге тырысады. Дескрипторлар осы тапсырманың нақты шарттарына негізделеді.</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label for="ownTaskMaxScore" class="block text-sm font-semibold mb-1">Өз тапсырмаңыздың максималды балы</label>
-                        <select id="ownTaskMaxScore" class="w-full text-sm p-2 border rounded-lg">
-                            <option value="1">1 балл</option><option value="5">5 балл</option><option value="10" selected>10 балл</option>
-                        </select>
-                    </div>
-                    <label class="flex items-start gap-2 text-sm rounded-lg bg-white/70 p-2">
-                        <input id="ownTaskEbkEnabled" type="checkbox" checked class="mt-1 accent-indigo-700">
-                        <span>ЕБҚ оқушысына арналған бейімделген нұсқасы мен жеке дескрипторларын құру</span>
-                    </label>
-                </div>
-                <p class="text-xs text-slate-600">Бұл тапсырманың балы ҚМЖ-ның негізгі 10 балдық бағалауынан бөлек көрсетіледі.</p>
-            </div>
-
-            <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-3">
-                <label class="flex items-start gap-2 text-sm font-semibold text-emerald-900 cursor-pointer">
-                    <input type="checkbox" id="ebkEnabled" class="mt-1 accent-emerald-600">
-                    <span>Сыныпта ЕБҚ бар оқушы(лар) бар</span>
-                </label>
-                <div id="ebkOptions" class="hidden space-y-2 pl-1">
-                    <p class="text-xs text-emerald-800">Қажетті қолдау түрлерін таңдаңыз:</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700">
-                        <label class="flex gap-2 items-start"><input type="checkbox" name="ebkNeed" value="Қысқа әрі нақты нұсқаулықтар" checked> Қысқа нұсқаулықтар</label>
-                        <label class="flex gap-2 items-start"><input type="checkbox" name="ebkNeed" value="Қадамдарға бөлінген тапсырмалар" checked> Қадамдық тапсырмалар</label>
-                        <label class="flex gap-2 items-start"><input type="checkbox" name="ebkNeed" value="Көрнекілік, суреттер және сызбалар" checked> Суреттер мен сызбалар</label>
-                        <label class="flex gap-2 items-start"><input type="checkbox" name="ebkNeed" value="Қосымша уақыт"> Қосымша уақыт</label>
-                        <label class="flex gap-2 items-start"><input type="checkbox" name="ebkNeed" value="Тірек сөздер мен жауап үлгілері"> Тірек сөздер, жауап үлгілері</label>
-                        <label class="flex gap-2 items-start"><input type="checkbox" name="ebkNeed" value="Ауызша жауап немесе балама жауап форматы"> Балама жауап форматы</label>
-                    </div>
-                    <label class="block text-xs font-semibold text-slate-600 pt-1">Қосымша қолдау (міндетті емес)</label>
-                    <input type="text" id="ebkOther" placeholder="Мысалы: ірі қаріп, дыбыстық нұсқаулық..." class="w-full text-sm p-2 border rounded-lg">
-                </div>
-            </div>
-
-            
-
-            <div id="turnstileContainer" class="hidden rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <p class="text-xs font-semibold text-slate-600 mb-2">Қауіпсіздік тексеруі</p>
-                <div id="turnstileWidget"></div>
-            </div>
-            <div id="generationStatus" class="hidden rounded-lg border p-3 text-sm" role="status" aria-live="polite"></div>
-            <button onclick="generateKMZH()" id="generateBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow transition flex justify-center items-center gap-2">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> ҚМЖ Генерациялау
-            </button>
-            <button type="button" onclick="resetForm()" class="w-full mt-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 border rounded-lg py-2 flex justify-center items-center gap-2"><i class="fa-solid fa-eraser"></i> Форманы тазалау</button>
-        </section>
-
-        <!-- Preview Section -->
-        <section class="lg:col-span-8 space-y-4">
-            
-            <!-- Export Buttons -->
-            <div class="flex flex-wrap justify-between items-center bg-white p-3 rounded-xl border border-slate-200 no-print gap-2">
-                <span class="text-sm font-semibold text-slate-600">Дайын ҚМЖ ұяшықтарын өңдеуге болады. Сақтау / Экспорттау:</span>
-                <div class="flex gap-2">
-                    <button onclick="exportToWord()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 px-3 rounded-lg flex items-center gap-1.5 transition">
-                        <i class="fa-solid fa-file-word text-sm"></i> Word-қа жүктеу (.docx)
-                    </button>
-                    <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold py-2 px-3 rounded-lg flex items-center gap-1.5 transition">
-                        <i class="fa-solid fa-print text-sm"></i> PDF / Басып шығару
-                    </button>
-                </div>
-            </div>
-
-            <!-- KMZH Document Container -->
-            <div id="kmzhContainer" class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200 print-area space-y-6">
-                <!-- Бос титулдық деректер: мұғалім Word/PDF жүктегеннен кейін толтырады -->
-                <table id="teacherHeaderTable" class="w-full text-xs text-left" style="border-collapse:collapse; margin-bottom:12px;">
-                    <tbody>
-                        <tr><td style="border:1px solid #000; padding:4px; width:23%; font-weight:bold;"><span id="labelOrgName">Білім беру ұйымының атауы</span></td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
-                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;"><span id="labelSubject">Пәні:</span></td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
-                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;"><span id="labelUnit">Бөлім:</span></td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
-                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;"><span id="labelTeacherName">Педагогтің аты-жөні:</span></td><td style="border:1px solid #000; padding:4px; height:22px;"></td></tr>
-                        <tr><td style="border:1px solid #000; padding:4px; font-weight:bold;"><span id="labelClass">Сынып:</span></td><td style="border:1px solid #000; padding:4px; height:22px;">
-                            <table style="width:100%; border-collapse:collapse; margin:0;"><tr><td style="border:0; padding:0; width:50%;"><span id="labelAttending">Қатысушылар саны:</span></td><td style="border:0; border-left:1px solid #000; padding:0 0 0 8px;"><span id="labelAbsent">Қатыспағандар саны:</span></td></tr></table>
-                        </td></tr>
-                    </tbody>
-                </table>
-                <!-- Негізгі мәліметтер: бос шапкадан кейін бірден жалғасады, артық тақырыптық блок жоқ -->
-                <table id="lessonInfoTable" class="w-full text-xs text-left" style="border-collapse:collapse; margin-top:0;">
-                    <tbody>
-                        <tr>
-                            <td id="labelOutTopic" class="font-bold bg-slate-50 p-2 w-1/4">Сабақтың тақырыбы:</td>
-                            <td id="outTopic" class="p-2" colspan="3">-</td>
-                        </tr>
-                        <tr>
-                            <td id="labelOutObjective" class="font-bold bg-slate-50 p-2 w-1/4">Оқу бағдарламасына сәйкес оқыту мақсаты: (оқу мақсаты)</td>
-                            <td id="outObjective" class="p-2" colspan="3">-</td>
-                        </tr>
-                        <tr>
-                            <td id="labelOutThinking" class="font-bold bg-slate-50 p-2">Блум таксономиясы бойынша ойлау деңгейі:</td>
-                            <td id="outThinkingLevels" class="p-2" colspan="3">-</td>
-                        </tr>
-                        <tr>
-                            <td id="labelOutGoal" class="font-bold bg-slate-50 p-2">Сабақтың мақсаты:</td>
-                            <td id="outLessonGoal" class="p-2" colspan="3">-</td>
-                        </tr>
-                        <tr>
-                            <td id="labelOutValues" class="font-bold bg-slate-50 p-2">Құндылықтар:</td>
-                            <td id="outValues" class="p-2" colspan="3">-</td>
-                        </tr>
-                        <tr>
-                            <td id="labelOutEducational" class="font-bold bg-slate-50 p-2">Тәрбиелік мақсат:</td>
-                            <td id="outEducationalGoal" class="p-2" colspan="3">-</td>
-                        </tr>
-                        <tr id="weeklyQuoteRow" class="hidden">
-                            <td id="labelOutQuote" class="font-bold bg-slate-50 p-2">Аптаның дәйексөзі:</td>
-                            <td id="outWeeklyQuote" class="p-2" colspan="3"></td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <!-- Main Schedule Table -->
-                <div class="overflow-x-auto">
-                    <table id="kmzhTable" class="w-full text-xs text-left">
-                        <thead><tr class="bg-slate-100 text-xs">
- <th class="p-2 border" style="width:8%"><span id="labelStage">Кезең / Уақыт</span></th><th class="p-2 border" style="width:17%"><span id="labelTeacherActions">Мұғалім әрекеті</span></th><th class="p-2 border" style="width:31%"><span id="labelStudentActions">Оқушы әрекеті</span></th><th class="p-2 border" style="width:20%"><span id="labelAssessment">Бағалау</span></th><th class="p-2 border ebk-col" id="ebkColumnHeader" style="width:16%" hidden><span id="labelEbk">ЕБҚ оқушыларына қолдау</span></th><th class="p-2 border" style="width:8%"><span id="labelResources">Ресурстар</span></th></tr></thead>
-                        <tbody id="kmzhTableBody">
-                            <tr>
-                                <td colspan="6" class="p-6 text-center text-slate-400 italic">
-                                    Форманы толтырып, «ҚМЖ құру» батырмасын басыңыз. Дайын ҚМЖ осы жерде автоматты түрде ашылады.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <section id="lessonAppendices" class="hidden mt-8 border-t-2 border-indigo-200 pt-5">
-                    <h3 class="text-lg font-bold text-indigo-900 mb-2">Сабаққа арналған қосымшалар</h3>
-                    <p class="text-xs text-slate-500 mb-3">Толық тапсырма мәтіндері, оқушыға берілетін материалдар, ЖИ промпттары және жауап кілттері.</p>
-                    <div id="appendicesContent"></div>
-                </section>
-            </div>
-        </section>
-    </main>
-
-
-    <!-- Kaspi package purchase dialog (manual verification until merchant API integration is approved) -->
-    <div id="packageModal" class="hidden fixed inset-0 z-[110] bg-slate-950/60 flex items-center justify-center p-4 no-print" role="dialog" aria-modal="true" aria-labelledby="packageModalTitle">
-        <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 p-5 sm:p-6 relative max-h-[92vh] overflow-y-auto">
-            <button type="button" onclick="closePackageModal()" class="absolute right-4 top-4 w-9 h-9 rounded-full hover:bg-slate-100 text-slate-500" aria-label="Жабу"><i class="fa-solid fa-xmark"></i></button>
-            <div class="flex items-center gap-3 mb-3 pr-10">
-                <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center"><i class="fa-solid fa-wallet text-lg"></i></div>
-                <div>
-                    <h2 id="packageModalTitle" class="text-xl font-bold text-slate-800">ҚМЖ пакетін сатып алу</h2>
-                    <p class="text-xs text-slate-500">Kaspi Pay арқылы төлеу</p>
-                </div>
-            </div>
-            <p class="text-sm text-slate-600 mb-4">Қазір бір ғана пакет қолжетімді. Kaspi төлем бетінде соманы дәл енгізіп, хабарламаға аккаунтыңыздың электрондық поштасы мен пакет атауын жазыңыз.</p>
-            <div class="flex justify-center">
-                <div class="w-full max-w-sm rounded-xl border-2 border-indigo-300 bg-indigo-50/60 p-5 flex flex-col">
-                    <div class="flex items-center justify-between gap-2">
-                        <p class="text-base font-bold text-slate-800">50 ҚМЖ</p>
-                        <span class="rounded-full bg-indigo-100 text-indigo-800 px-2 py-1 text-xs font-bold">Бір пакет</span>
-                    </div>
-                    <p class="text-3xl font-extrabold text-indigo-700 my-3">3 990 ₸</p>
-                    <p class="text-sm text-slate-600 mb-4">79,80 ₸ / ҚМЖ</p>
-                    <button type="button" onclick="startKaspiPayment(50)" class="mt-auto rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4">50 ҚМЖ пакетін таңдау</button>
-                </div>
-            </div>
-            <div id="kaspiPaymentInstructions" class="hidden mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-live="polite">
-                <p id="kaspiChosenPackage" class="font-bold text-amber-950 mb-2"></p>
-                <ol class="list-decimal pl-5 text-sm text-amber-950 space-y-1">
-                    <li>Төлем сомасын дәл енгізіңіз: 3 990 ₸.</li>
-                    <li>Хабарлама/түсініктеме өрісіне төмендегі мәтінді енгізіңіз. Тапсырыс кодын өзгертпеңіз.</li>
-                    <li>Төлемнен кейін тапсырыс әкімші тексергенше «Күтілуде» күйінде болады.</li>
-                </ol>
-                <div class="mt-3 flex flex-col sm:flex-row gap-2">
-                    <input id="kaspiPaymentReference" readonly class="min-w-0 flex-1 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm" aria-label="Төлем түсініктемесі" />
-                    <button type="button" onclick="copyKaspiPaymentReference()" class="rounded-lg border border-amber-400 bg-white hover:bg-amber-100 px-3 py-2 text-sm font-semibold"><i class="fa-regular fa-copy mr-1"></i>Мәтінді көшіру</button>
-                </div>
-                <a id="kaspiPaymentLink" href="https://pay.kaspi.kz/pay/qcxjykr8" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center justify-center rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-2.5"><i class="fa-solid fa-arrow-up-right-from-square mr-2"></i>Kaspi Pay бетіне өту</a>
-                <p class="mt-3 text-xs text-amber-900 leading-relaxed"><strong>Маңызды:</strong> бұл жалпы қашықтан төлеу сілтемесі. Төлем сайтқа автоматты түрде расталмайды және баланс бірден өзгермейді. Әкімші Kaspi Pay-де төлемді тексергеннен кейін ғана пакет қолмен есепке қосылады. Соманы немесе пакет туралы мәліметті қате көрсетсеңіз, пакет кешігіп қосылуы мүмкін.</p>
-            </div>
-            <p class="mt-4 text-xs text-slate-500">Төлем сілтемесі: <span class="font-mono">pay.kaspi.kz/pay/qcxjykr8</span>. Автоматты төлемді тексеру және пакет беру үшін Kaspi тарапынан арнайы интернет-төлем интеграциясы қосымша қажет.</p>
-        </div>
-    </div>
-
-    <!-- Supabase authentication dialog -->
-    <div id="authModal" class="hidden fixed inset-0 z-[100] bg-slate-950/60 flex items-center justify-center p-4 no-print" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-        <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200 p-5 sm:p-6 relative max-h-[90vh] overflow-y-auto">
-            <button type="button" onclick="closeAuthModal()" class="absolute right-4 top-4 w-9 h-9 rounded-full hover:bg-slate-100 text-slate-500" aria-label="Жабу"><i class="fa-solid fa-xmark"></i></button>
-            <div class="flex items-center gap-3 mb-4 pr-10">
-                <div class="w-11 h-11 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center"><i class="fa-solid fa-user-lock text-lg"></i></div>
-                <div>
-                    <h2 id="authTitle" class="text-xl font-bold text-slate-800">Кіру</h2>
-                    <p id="authSubtitle" class="text-xs text-slate-500">ҚМЖ генераторына аккаунтыңыз арқылы кіріңіз.</p>
-                </div>
-            </div>
-            <div id="authTabs" class="grid grid-cols-2 gap-2 mb-4">
-                <button id="authLoginTab" type="button" onclick="switchAuthMode('login')" class="rounded-lg bg-indigo-600 text-white font-semibold text-sm py-2">Кіру</button>
-                <button id="authSignupTab" type="button" onclick="switchAuthMode('signup')" class="rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold text-sm py-2">Тіркелу</button>
-            </div>
-            <form id="authForm" class="space-y-3" novalidate>
-                <div id="authEmailWrap">
-                    <label for="authEmail" class="block text-sm font-semibold text-slate-700 mb-1">Электрондық пошта</label>
-                    <input id="authEmail" type="email" autocomplete="email" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="you@example.com" required>
-                </div>
-                <div id="authPasswordWrap">
-                    <label id="authPasswordLabel" for="authPassword" class="block text-sm font-semibold text-slate-700 mb-1">Құпиясөз</label>
-                    <input id="authPassword" type="password" autocomplete="current-password" minlength="8" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Кемінде 8 таңба" required>
-                </div>
-                <div id="authConfirmPasswordWrap" class="hidden">
-                    <label for="authConfirmPassword" class="block text-sm font-semibold text-slate-700 mb-1">Құпиясөзді қайталаңыз</label>
-                    <input id="authConfirmPassword" type="password" autocomplete="new-password" minlength="8" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Құпиясөзді қайталаңыз">
-                </div>
-                <div id="authStatus" class="hidden rounded-lg border px-3 py-2.5 text-sm" role="status" aria-live="polite"></div>
-                <button id="authSubmitBtn" type="submit" class="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold py-2.5">Кіру</button>
-                <button id="authResetBtn" type="button" onclick="sendPasswordReset()" class="w-full text-sm text-indigo-700 hover:underline">Құпиясөзді ұмыттыңыз ба?</button>
-                <p id="authFooterNote" class="text-xs text-slate-500 leading-relaxed">Тіркелген кезде электрондық поштаңызды растау үшін хат жіберіледі.</p>
-            </form>
-        </div>
-    </div>
-
- <script>
-        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        const nl = s => esc(s).replace(/\n/g, '<br>');
-
-        // Remove AI work from the student-summary text when it is also supplied in the dedicated aiWork field.
-        // This prevents a nested/duplicate "ЖИ ЖҰМЫС" panel in the student activity column.
-        function removeEmbeddedAiWork(raw) {
-            const lines = textOf(raw).replace(/\r/g, '').split('\n');
-            const kept = [];
-            let skippingAi = false;
-            const nextTask = line => /^(?:\s*\d+\s*[-.)]?\s*тапсырма\b|\s*тапсырма\s*№?\s*\d+|\s*ЖҰМЫС\s+ФОРМАСЫ\s*:|\s*(?:Әдіс|Тапсырма\s+шарты|Орындау\s+тәртібі)\s*:)/iu.test(line);
-            for (const line of lines) {
-                if (/^\s*(?:ЖИ\s+(?:ЖҰМЫС|КІРІКТІРУ)|Жасанды\s+интеллектпен\s+жұмыс)\s*[:—-]?/iu.test(line)) {
-                    skippingAi = true;
-                    continue;
-                }
-                if (skippingAi) {
-                    if (!line.trim()) continue;
-                    if (nextTask(line)) skippingAi = false;
-                    else continue;
-                }
-                if (/^\s*(?:Дескриптор(?:лар)?|Бағалау\s+критерий(?:і|лері)|Балл\s*:)/iu.test(line)) continue;
-                kept.push(line);
-            }
-            return kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-        }
-
-        // Remove task-number headings. Keep work-form labels and task conditions unchanged.
-        function ensureStudentTaskNumbers(raw) {
-            return textOf(raw).replace(/\r/g, '').split('\n')
-                .map(line => line.replace(/^\s*(?:\d+\s*[-.)]?\s*тапсырма\s*[.:—-]?|тапсырма\s*№?\s*\d+\s*[.:—-]?)\s*/iu, '').trimEnd())
-                .filter(line => line.trim().length > 0)
-                .join('\n');
-        }
-
-        // Format teacher/student actions as separate visual blocks; emphasize numbered tasks, work forms, and AI activity.
-        function renderPlanActionText(raw) {
-            let value = textOf(raw).replace(/\r/g, '').trim();
-            if (!value) return '-';
-            value = value
-                .replace(/(?<!\n)(?=(?:\d+\s*[-.)]?\s*(?:тапсырма|кезең)\b|тапсырма\s*№?\s*\d+))/giu, '\n\n')
-                .replace(/(?<!\n)(?=(?:Жұмыс\s+формасы\s*:|(?:ЖЕКЕ|ЖҰПТЫҚ|ТОПТЫҚ|ФРОНТАЛЬДЫҚ)\s+ЖҰМЫС\b))/giu, '\n\n')
-                .replace(/(?<!\n)(?=(?:ЖИ\s+(?:ЖҰМЫС|КІРІКТІРУ)\s*:|Жасанды\s+интеллектпен\s+жұмыс\s*:))/giu, '\n\n')
-                .replace(/([.!?])\s+(?:(?:Содан\s+кейін|Одан\s+кейін)\s+)?(?=(?:Мұғалім\b|Оқушылар?\b|Соңында\b|Бірінші\b|Келесі\b|\d{1,2}\s*[–-]\s*\d{1,2}\s*(?:минутта|минут|мин\b)))/gu, '$1\n\n');
-            const blocks = value.split(/\n\s*\n|\n/).map(x => x.trim()).filter(Boolean);
-            if (!blocks.length) return '-';
-            const renderInline = line => {
-                const task = line.match(/^\s*(\d+\s*[-.)]?\s*тапсырма|тапсырма\s*№?\s*\d+)\s*([.:—-]?)\s*(.*)$/iu);
-                if (task) {
-                    return task[3] ? renderInline(task[3]) : '';
-                }
-                const cond = line.match(/^\s*(Тапсырма\s+шарты|Шарт|Не\s+істеу\s+керек|Орындау\s+тәртібі|Нұсқау)\s*:\s*(.*)$/iu);
-                if (cond) return `<strong class="task-condition-label">${esc(cond[1])}:</strong> ${renderInline(cond[2])}`;
-                const pattern = /(Жұмыс\s+формасы\s*:\s*)(Жеке\s+жұмыс|Жұптық\s+жұмыс|Топтық\s+жұмыс|Фронтальды\s+жұмыс)|(Жеке\s+жұмыс|Жұптық\s+жұмыс|Топтық\s+жұмыс|Фронтальды\s+жұмыс)/giu;
-                let out = '', last = 0, match;
-                while ((match = pattern.exec(line)) !== null) {
-                    out += esc(line.slice(last, match.index));
-                    const label = match[1] ? `${match[1].toUpperCase()} ` : '';
-                    const form = (match[2] || match[3] || '').toUpperCase();
-                    out += `<span class="work-form-label">${esc(label + form)}</span>`;
-                    last = match.index + match[0].length;
-                }
-                out += esc(line.slice(last));
-                return out;
-            };
-            return `<div class="plan-action-list">${blocks.map(line => {
-                const aiMatch = line.match(/^(?:ЖИ\s+(?:ЖҰМЫС|КІРІКТІРУ)|Жасанды\s+интеллектпен\s+жұмыс)\s*[:—-]?\s*/iu);
-                if (aiMatch) {
-                    // The only visible AI heading is rendered from the dedicated stages[].aiWork field below.
-                    // Legacy AI text inside teacher/student prose must not create another titled panel.
-                    const body = line.slice(aiMatch[0].length).trim();
-                    return body ? `<div class="plan-action-block">${renderInline(body)}</div>` : '';
-                }
-                return `<div class="plan-action-block">${renderInline(line)}</div>`;
-            }).join('')}</div>`;
-        }
-
-        function renderAiWorkBox(raw) {
-            const body = textOf(raw).trim();
-            if (!body) return '';
-            return `<section class="ai-work-box"><div class="ai-work-heading">${getPlanLabel('aiWork')}</div><div class="ai-work-body">${renderPlanActionText(body)}</div></section>`;
-        }
-        // Safe setter: the printable ҚМЖ header no longer contains redundant subject/grade/unit output fields.
-        // Keep older update calls from failing when an optional element is not present.
-        function setTextIfPresent(id, value) {
-            const element = document.getElementById(id);
-            if (element) element.innerText = value == null ? '' : String(value);
-        }
-        const EMPTY_ROW = '<tr><td colspan="6" class="p-6 text-center text-slate-400 italic">Форманы толтырып, «ҚМЖ құру» батырмасын басыңыз. Дайын ҚМЖ осы жерде автоматты түрде ашылады.</td></tr>';
-
-        const METHODS = `Жүгірмелі сөйлемдер – қабырғадағы сөйлемдерді оқып, топқа жеткізу; Үштіктер – 3 оқушы: айтушы, сұрақ қоюшы, бағалаушы; Домино – сұрақ пен жауап қималарын сәйкестендіру; Лото – қоржыннан нөмір/сұрақ алу; Бір картина – парақты айналдырып ой жазу; 3х3 – 9 торлы кестеден термин таңдап түсіндіру; Мұғалімге сұрақ – оқушы сұрақ құрастырады; Тиын – тиын лақтырып сұрақ қою; Құпиясы бар қорап – қорапшадан сұрақ алу; Блиц-сұрау – терминді айтпай түсіндіру; Бинго – 9 термин, сұрақ бойынша сызу; Карталар – сұрақ-жауап карталарын алмасу; Қарама-қарсы сұрақтар – екі топ бір-біріне сұрақ қояды; Алфавит – әріптен басталатын термин айту; Иә-жоқ – тұжырымға қарай бұрылу; 6 қалпақ – 6 рөлде талқылау; Бір минуттық эссе; Қағып ал! – анықтамаға сай термин карточкасын қағып алу; Модерация – идеяларды стикерге жазу; Стоп-кадр – видеоны тоқтатып сұрақ қою; Сөйлем қос – мәтінді кезекпен жалғастыру; Бүктелген қағаз – сұрақ жазып алмасу; Эксперт бұрышы – эксперт оқушы көмектеседі; Керемет қабырға – сұрақтарды қабырғаға жазу; Кір жаю – түсінгенін жіпке ілу; Төрт бұрыш – A,B,C,D бұрышын таңдау; Қос шеңбер – ішкі/сыртқы шеңбер жұптасу; Сигнал карталары – карта көтеріп жауап беру; RAFT – рөл, аудитория, формат, тақырып; Үш минуттық пауза – үнсіз ойланып жазу; Ойлан-Жұптас-Бөліс – жеке, жұппен, топпен`;
-
-        function resetForm() {
-            ['subject','unit','topic','objective','weeklyQuote','ebkOther'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-            document.getElementById('grade').value = '';
-            document.getElementById('lessonType').value = 'auto';
-            document.getElementById('subjectCategory').value = 'auto';
-            document.getElementById('subjectApproach').value = 'auto';
-            subjectCategoryManuallySet = false;
-            updateSubjectApproachOptions();
-            document.getElementById('ebkEnabled').checked = false;
-            document.querySelectorAll('input[name="aiTool"]').forEach(el => { el.checked = false; });
-            document.querySelectorAll('input[name="thinkingLevel"]').forEach(el => { el.checked = false; });
-            document.getElementById('ebkOptions').classList.add('hidden');
-            document.getElementById('ebkColumnHeader').hidden = true;
-            document.getElementById('lessonAppendices').classList.add('hidden');
-            document.getElementById('appendicesContent').innerHTML = '';
-            currentRenderedData = null;
-            document.querySelectorAll('input[name="ebkNeed"]').forEach(el => { el.checked = ['Қысқа әрі нақты нұсқаулықтар','Қадамдарға бөлінген тапсырмалар','Көрнекілік, суреттер және сызбалар'].includes(el.value); });
-            ['outSubject','outGrade','outUnit','outObjective','outThinkingLevels','outLessonGoal','outValues','outEducationalGoal','outWeeklyQuote'].forEach(id => setTextIfPresent(id, '-'));
-            setTextIfPresent('outTopic', 'Сабақ тақырыбы көрсетілмеген');
-            const quoteRow = document.getElementById('weeklyQuoteRow'); if (quoteRow) quoteRow.classList.add('hidden');
-            document.getElementById('kmzhTableBody').innerHTML = EMPTY_ROW;
-            setStatus('', '');
-            turnstileToken = '';
-            if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
-        }
-
-        function normalizeArray(v) {
-            if (Array.isArray(v)) return v;
-            if (v == null || v === '') return [];
-            return [v];
-        }
-
-        function textOf(v) {
-            if (v == null) return '';
-            if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v);
-            if (Array.isArray(v)) return v.map(textOf).filter(Boolean).join('\n');
-            if (typeof v === 'object') {
-                return String(
-                    v.text ?? v.value ?? v.description ?? v.content ??
-                    v.task ?? v.answer ?? v.name ?? v.label ?? v.step ?? v.prompt ?? ''
-                );
-            }
-            return '';
-        }
-
-        // Дескрипторларда «Білім алушы» және «Оқушы» тіркестерін көрсетпейміз.
-        function cleanDescriptor(v) {
-            return textOf(v).trim()
-                .replace(/^(?:Білім\s+алушы|Оқушы)\s*[:,—–-]?\s*/i, '')
-                .trim();
-        }
-
-        function getField(obj, names) {
-            if (!obj || typeof obj !== 'object') return '';
-            for (const name of names) {
-                if (obj[name] != null && obj[name] !== '') return obj[name];
-            }
-            return '';
-        }
-
-        function getMainDescriptors(stage) {
-            const direct = getField(stage, [
-                'descriptors','descriptor','mainDescriptors',
-                'assessmentDescriptors','дескрипторлар'
-            ]);
-            if (direct) return normalizeArray(direct);
-
-            // Compatibility with slightly different AI JSON structures.
-            for (const key of ['assessment','assessmentData','evaluation','бағалау','taskData']) {
-                if (stage[key] && typeof stage[key] === 'object') {
-                    const nested = getField(stage[key], [
-                        'descriptors','descriptor','mainDescriptors',
-                        'assessmentDescriptors','дескрипторлар'
-                    ]);
-                    if (nested) return normalizeArray(nested);
-                }
-            }
-            return [];
-        }
-
-        function getEbk(stage) {
-            return stage.ebk || stage.EBK || stage.ebq ||
-                   stage.ebkSupport || stage['ЕБҚ'] || {};
-        }
-
-        // Құрылымдалған визуал материалдарды шынайы HTML кесте, SVG график және схема түрінде көрсету.
-        function renderVisuals(value) {
-            if (value == null || value === '') return '';
-            const items = Array.isArray(value) ? value : (typeof value === 'object' ? [value] : [value]);
-            const safeHttpUrl = raw => {
-                const u = String(raw || '').trim();
-                return /^https?:\/\//i.test(u) ? u : '';
-            };
-            const escAttr = raw => esc(String(raw || '').replace(/\s+/g, ' ').trim());
-            return items.map((v, idx) => {
-                if (typeof v === 'string') {
-                    return `<div class="visual-card"><div class="font-bold text-indigo-800 mb-2">Көрнекілік ${idx + 1}</div><div class="task-content">${nl(v)}</div></div>`;
-                }
-                if (!v || typeof v !== 'object') return '';
-                const rawType = String(v.type || v.kind || v.visualType || v.format || 'image_description').toLowerCase();
-                const type = ({'схема':'diagram','flowchart':'diagram','process':'diagram','кесте':'table','таблица':'table','график':'graph','chart':'graph','image':'image_description','picture':'image_description','сурет':'image_description','diagram':'diagram','table':'table','graph':'graph'})[rawType] || rawType;
-                const titleText = textOf(v.title || v.name || v.caption) || 'Көрнекі материал';
-                const title = esc(titleText);
-                const description = textOf(v.description || v.caption || v.alt || v.explanation || v.text);
-                let body = '';
-                if (type === 'table') {
-                    const columns = normalizeArray(v.columns || v.headers || v.headings).map(textOf).filter(Boolean);
-                    const rawRows = normalizeArray(v.rows || v.dataRows || v.values);
-                    const rows = rawRows.map(row => Array.isArray(row) ? row.map(textOf) : (row && typeof row === 'object' ? columns.map((c,i) => textOf(row[c] ?? row[String(i)] ?? row['col'+(i+1)])) : [textOf(row)]));
-                    if (columns.length) {
-                        const head = columns.map(c => `<th class="p-2 bg-indigo-50 text-left">${esc(c)}</th>`).join('');
-                        const bodyRows = rows.map(row => `<tr>${columns.map((_,i) => `<td class="p-2">${esc(row[i] || '')}</td>`).join('')}</tr>`).join('');
-                        body = `<div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr>${head}</tr></thead><tbody>${bodyRows}</tbody></table></div>`;
-                    }
-                } else if (type === 'graph') {
-                    const data = normalizeArray(v.data || v.points || v.values).map(d => ({label: textOf(d && (d.label ?? d.name ?? d.x)), value: Number(d && (d.value ?? d.y))})).filter(d => d.label && Number.isFinite(d.value));
-                    if (data.length) {
-                        const W = 560, H = 250, left = 48, right = 14, top = 30, bottom = 58;
-                        const plotW = W - left - right, plotH = H - top - bottom;
-                        const minVal = Math.min(0, ...data.map(d => d.value));
-                        const maxVal = Math.max(1, ...data.map(d => d.value));
-                        const span = Math.max(1, maxVal - minVal);
-                        const y = val => top + (maxVal - val) / span * plotH;
-                        const baseline = y(0), step = plotW / data.length, barW = Math.min(48, step * 0.62);
-                        const grid = Array.from({length:5},(_,i)=>{const val=minVal+(maxVal-minVal)*i/4;const yy=y(val);return `<line x1="${left}" y1="${yy}" x2="${W-right}" y2="${yy}" stroke="#dbeafe"/><text x="${left-7}" y="${yy+4}" font-size="10" text-anchor="end" fill="#475569">${esc(String(Number(val.toFixed(2))))}</text>`;}).join('');
-                        const bars = data.map((d,i) => { const x=left+i*step+(step-barW)/2, yy=Math.min(y(d.value),baseline), hh=Math.max(1,Math.abs(baseline-y(d.value))), label=d.label.length>15?d.label.slice(0,14)+'…':d.label; return `<rect x="${x.toFixed(1)}" y="${yy.toFixed(1)}" width="${barW.toFixed(1)}" height="${hh.toFixed(1)}" rx="3" fill="#818cf8"><title>${esc(d.label)}: ${d.value}</title></rect><text x="${(x+barW/2).toFixed(1)}" y="${Math.max(15,yy-5).toFixed(1)}" font-size="10" text-anchor="middle" fill="#312e81">${esc(String(d.value))}</text><text x="${(x+barW/2).toFixed(1)}" y="${H-34}" font-size="9" text-anchor="middle" fill="#334155">${esc(label)}</text>`; }).join('');
-                        body = `<div class="overflow-x-auto"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}" style="display:block;width:100%;min-width:280px;max-height:340px"><text x="${left}" y="16" font-size="11" fill="#334155">${esc(textOf(v.yLabel) || 'Мән')}</text>${grid}${bars}<text x="${W/2}" y="${H-7}" font-size="11" text-anchor="middle" fill="#334155">${esc(textOf(v.xLabel) || 'Көрсеткіш')}</text></svg></div>`;
-                    }
-                } else if (type === 'diagram') {
-                    const steps = normalizeArray(v.steps || v.nodes || v.items || v.process).map(textOf).filter(Boolean);
-                    if (steps.length) body = `<div class="flex flex-col items-stretch gap-1">${steps.map((step,i) => `${i ? '<div class="text-center text-indigo-500 font-bold" aria-hidden="true">↓</div>' : ''}<div class="visual-flow-step">${esc(step)}</div>`).join('')}</div>`;
-                } else {
-                    const imageUrl = safeHttpUrl(v.image_url || v.imageUrl || v.url || v.src);
-                    const imageData = typeof (v.data_uri || v.dataUri || v.base64) === 'string' ? String(v.data_uri || v.dataUri || v.base64).trim() : '';
-                    const safeData = /^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=\s]+$/i.test(imageData) ? imageData : '';
-                    if (imageUrl || safeData) {
-                        const source = imageUrl || safeData;
-                        body = `<figure class="rounded-lg bg-white border border-indigo-100 p-2"><img src="${escAttr(source)}" alt="${title}" loading="lazy" class="visual-image" onerror="this.style.display='none';this.nextElementSibling.classList.remove('hidden')"><figcaption class="hidden text-xs text-amber-700 p-2">Сурет жүктелмеді: сілтеме ашылмады.</figcaption>${description ? `<figcaption class="text-xs mt-2">${nl(description)}</figcaption>` : ''}</figure>`;
-                    } else {
-                        // A visual panel is always rendered even when the model gives only a description.
-                        // This avoids an empty image slot and gives teachers a printable visual reference.
-                        const words = (description || titleText).split(/\s+/).filter(Boolean).slice(0,9);
-                        const chips = words.map((word,i)=>`<span x="0" class="inline-block rounded-full px-2 py-1 m-1 text-xs font-semibold" style="background:${['#dbeafe','#dcfce7','#fef3c7','#f3e8ff'][i%4]};color:#334155">${esc(word)}</span>`).join('');
-                        body = `<div class="rounded-lg bg-white border border-indigo-100 p-3"><svg viewBox="0 0 520 90" role="img" aria-label="${title}" style="width:100%;height:auto;display:block"><rect x="2" y="2" width="516" height="86" rx="12" fill="#eef2ff" stroke="#a5b4fc"/><circle cx="46" cy="45" r="22" fill="#c7d2fe"/><path d="M36 45h20M46 35v20" stroke="#4338ca" stroke-width="4" stroke-linecap="round"/><path d="M77 45h28m-7 -7 7 7-7 7" stroke="#818cf8" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="120" y="40" font-size="15" font-weight="700" fill="#312e81">${esc(titleText.slice(0,42))}</text><text x="120" y="61" font-size="11" fill="#475569">Оқу материалы / визуалды тірек</text></svg><div class="mt-2">${chips}</div>${description ? `<div class="text-sm mt-2">${nl(description)}</div>` : ''}<p class="text-xs text-slate-500 mt-2">Нақты фотосурет автоматты түрде жасалмайды; бұл — сипаттамаға негізделген визуалды тірек.</p></div>`;
-                    }
-                }
-                return `<div class="visual-card"><div class="font-bold text-indigo-800 mb-2">${type === 'table' ? '▦' : type === 'graph' ? '▥' : type === 'diagram' ? '↘' : '🖼'} ${title}</div>${body || `<div class="text-sm">${nl(description || 'Көрнекі материалдың өрістері толық берілмеген.')}</div>`}</div>`;
-            }).filter(Boolean).join('');
-        }
-
-        let currentRenderedData = null;
-        function render(d, quiet = false) {
-            currentRenderedData = d;
-            setTextIfPresent('outLessonGoal', textOf(getField(d, ['lessonGoal','lesson_goal','goal','сабақМақсаты'])) || '-');
-            setTextIfPresent('outValues', textOf(getField(d, ['values','value','құндылықтар'])) || '-');
-            setTextIfPresent('outEducationalGoal', textOf(getField(d, ['educationalGoal','educational_goal','тәрбиелікМақсат','тәрбиелік мақсат'])) || '-');
-            const weeklyQuote = textOf(getField(d, ['weeklyQuote','weekly_quote','аптаныңДәйексөзі','аптаның дәйексөзі']));
-            setTextIfPresent('outWeeklyQuote', weeklyQuote);
-            const weeklyQuoteRow = document.getElementById('weeklyQuoteRow');
-            if (weeklyQuoteRow) weeklyQuoteRow.classList.toggle('hidden', !weeklyQuote);
-            const ebkOn = !!document.getElementById('ebkEnabled').checked;
-            document.getElementById('ebkColumnHeader').hidden = !ebkOn;
-            const tb = document.getElementById('kmzhTableBody'); tb.innerHTML = '';
-            let n = 0;
-            let ebkTotal = 0;
-            const stages = normalizeArray(d.stages || d.stage || d.lessonStages);
-            const stageNames = ['Сабақтың басы (0–5 мин)','Сабақтың ортасы (5–35 мин)','Сабақтың соңы (35–45 мин)'];
-            const appendixItems = [];
-            const addAppendix = (title, content, stageName='') => {
-                const txt = textOf(content).trim();
-                if (txt) appendixItems.push({title: String(title || 'Қосымша материал'), content: txt, stage: stageName});
-            };
-            stages.forEach((s, index) => {
-                s = s || {};
-                const e = getEbk(s);
-                const stageName = textOf(getField(s, ['stage','name','кезең'])) || stageNames[index] || `Кезең ${index+1}`;
-                const teacherFull = textOf(getField(s, ['teacher','teacherAction','teacher_activity','мұғалім','мұғалімӘрекеті']));
-                let studentFull = textOf(getField(s, ['student','studentAction','student_activity','оқушы','оқушыӘрекеті']));
-                // Кейбір ЖИ жауаптарында ЕБҚ тапсырмасы student мәтінінің ішінде де келеді.
-                // Сол қайталанатын бөлікті алып тастаймыз; төменде бір ғана рамка ретінде көрсетіледі.
-                if (ebkOn) {
-                    studentFull = studentFull
-                        .replace(/\[?ЕБҚ\s+оқушысына\s+арналған\s+тапсырма\s*:?\]?\s*[：:]?[^\n]*(?:\n(?!\s*(?:ЕБҚ\s+дескрипторлары|\[?ЕБҚ\s+оқушысына\s+арналған\s+тапсырма)).*)*/gi, '')
-                        .replace(/ЕБҚ\s+дескрипторлары\s*:?[^\n]*(?:\n(?!\s*(?:Қалыптастырушы\s+бағалау|Жұмыс\s+түрі|\d+[-.)])).*)*/gi, '')
-                        .replace(/\n{3,}/g, '\n\n').trim();
-                }
-                const resourcesFull = textOf(getField(s, ['resources','resource','ресурстар']));
-                const taskDetails = textOf(getField(s, ['taskDetails','fullTask','full_task','тапсырмаМәтіні','толықТапсырма']));
-                const promptDetails = textOf(getField(s, ['aiPrompt','prompt','ЖИпромпты','promptText']));
-                const aiWork = textOf(getField(s, ['aiWork','ai_work','aiActivity','ai_activity','ЖИжұмыс','ЖИ жұмысы']));
-                const answerKey = textOf(getField(s, ['answerKey','answers','expectedAnswers','жауапКілті','күтілетінЖауап']));
-                const teacherPrompt = textOf(getField(s, ['teacherPrompt','teacher_prompt']));
-                const descriptors = getMainDescriptors(s);
-                const descriptorRows = descriptors.map(x => { const txt=cleanDescriptor(x); if(!txt) return ''; n++; return `<tr><td>${esc(txt)}</td><td style="text-align:center;width:45px;font-weight:700;">1</td></tr>`; }).filter(Boolean).join('');
-                const ds = descriptorRows ? `<table class="descriptor-table w-full text-xs"><thead><tr><th>${getPlanLabel('descriptor')}</th><th style="width:45px;text-align:center;">${getPlanLabel('points')}</th></tr></thead><tbody>${descriptorRows}</tbody></table>` : '-';
-                const support = textOf(getField(e, ['support','қолдау','supportType','supportTypes']));
-                const ebkTask = textOf(getField(e, ['task','ebkTask','жеңілдетілгенТапсырма','simplifiedTask']));
-                const ebDescriptors = normalizeArray(getField(e, ['descriptors','descriptor','дескрипторлар']));
-                if (ebkOn) ebkTotal += ebDescriptors.filter(x => textOf(x)).length;
-                // ЕБҚ бағанында тек қолдау мен бейімдеу тәсілдері қалады.
-                const eb = `${getPlanLabel('supportTypes')} ${support || getPlanLabel('shortInstructionsDefault')}\n${getPlanLabel('taskAdaptation')} ${textOf(getField(e, ['adaptation','scaffolding','бейімдеу','жеңілдету'])) || getPlanLabel('shortStepsDefault')}`;
-                // ЕБҚ тапсырмасы тек бір рет — жалпы тапсырмадан кейінгі жеке рамкада беріледі.
-                // ЕБҚ дескрипторлары оқушы әрекетінде қайталанбайды; олар бағалау бағанына шығарылады.
-                const ebTaskBox = ebkOn && ebkTask
-                    ? `<div class="ebk-task-box"><strong>${getPlanLabel('ebkTask')}</strong><div class="mt-1">${nl(ebkTask)}</div></div>`
-                    : '';
-                const ebDescriptorsHtml = ebkOn && ebDescriptors.length
-                    ? `<div class="mt-3"><strong class="text-emerald-800">${getPlanLabel('ebkDescriptors')}</strong><table class="descriptor-table w-full text-xs mt-1"><thead><tr><th>${getPlanLabel('descriptor')}</th><th style="width:45px;text-align:center;">${getPlanLabel('points')}</th></tr></thead><tbody>${ebDescriptors.map(x=>`<tr><td>${esc(cleanDescriptor(x))}</td><td style="text-align:center;font-weight:700;">1</td></tr>`).join('')}</tbody></table></div>`
-                    : '';
-                let formative = textOf(getField(s, ['formativeAssessment','formative_assessment','қалыптастырушыБағалау','қб','assessmentMethod']));
-                formative = formative.replace(/^\s*Қалыптастырушы\s+бағалау\s*:\s*/i, '').trim();
-                const reflection = textOf(getField(s, ['reflection','рефлексия']));
-                const studentData = getField(s, ['student','studentAction','student_activity','оқушы','оқушыӘрекеті']);
-                const visuals = getField(s, ['visuals','visual','көрнекілік','визуал']) || (studentData && typeof studentData === 'object' ? getField(studentData, ['visuals','visual','көрнекілік','визуал']) : '') || (s.task && typeof s.task === 'object' ? getField(s.task, ['visuals','visual','көрнекілік','визуал']) : '');
-                const visualHtml = renderVisuals(visuals);
-                // Keep the schedule compact; full instructions and prompts go into appendices.
-                let studentShort = textOf(getField(s, ['studentSummary','student_summary','қысқашаТапсырма','taskSummary'])) || studentFull;
-                // aiWork has its own prominent panel; remove any repeated panel/content embedded in studentSummary.
-                if (aiWork) studentShort = removeEmbeddedAiWork(studentShort);
-                studentShort = ensureStudentTaskNumbers(studentShort);
-                // Show the curated summary first so the main teaching actions and AI reference are not cut off.
-                // Keep the full teacher script in the appendix when it is long.
-                const teacherSummary = textOf(getField(s, ['teacherSummary','teacher_summary','қысқашаМұғалімӘрекеті']));
-                let teacherShort = teacherSummary || teacherFull;
-                if (aiWork) teacherShort = removeEmbeddedAiWork(teacherShort);
-                const shortText = (txt, max=360) => txt.length > max ? txt.slice(0,max).trim() + '… (толық нұсқасы қосымшада)' : txt;
-                const visualsInCell = visualHtml ? `<div class="visuals-in-plan">${visualHtml}</div>` : '';
-                const reflectionPrompts = [
-                    '1) Қай тапсырма арқылы бүгінгі оқу мақсатына жақындадың? Нақты мысал келтір.',
-                    '2) Қай тапсырма қиын болды? Қиындықты қалай шештің?',
-                    '3) Бүгін не үйрендің және оны қайда қолдана аласың?'
-                ].join('\\n');
-                // Reflection belongs only to the lesson conclusion, never to the beginning/middle.
-                const reflectionText = reflection || reflectionPrompts;
-                const reflectionHtml = index === 2
-                    ? `<div class="mt-2 rounded-lg bg-violet-50 border border-violet-200 p-2"><strong class="text-violet-800">${getPlanLabel('reflection')}</strong><div class="mt-1">${nl(shortText(reflectionText,420))}</div></div>`
-                    : '';
-                const aiWorkBox = renderAiWorkBox(aiWork);
-                const stu = `<div class="task-content">${renderPlanActionText(shortText(studentShort || '-',850))}</div>${aiWorkBox}${visualsInCell}${ebTaskBox}${reflectionHtml}`;
-                if (taskDetails) addAppendix(`${stageName}: ${getPlanLabel('fullTaskText')}`, taskDetails, stageName);
-                // If the main student activity is long, preserve the full original in the appendix.
-                if (studentFull.length > 420 && studentFull !== studentShort) addAppendix(`${stageName}: ${getPlanLabel('studentFullGuide')}`, studentFull, stageName);
-                else if (studentFull.length > 420) addAppendix(`${stageName}: ${getPlanLabel('fullTaskText')}`, studentFull, stageName);
-                if (promptDetails || teacherPrompt) addAppendix(`${stageName}: ${getPlanLabel('aiPrompt')}`, promptDetails || teacherPrompt, stageName);
-                const teacherExplanation = textOf(getField(s, ['teacherExplanation','teacher_explanation','түсіндіруЖазбасы','мұғалімТүсіндірмесі']));
-                if (teacherExplanation) addAppendix(`${stageName}: ${getPlanLabel('teacherExplanationNote')}`, teacherExplanation, stageName);
-                else if (teacherFull.length > 700) addAppendix(`${stageName}: ${getPlanLabel('teacherFullExplanation')}`, teacherFull, stageName);
-                if (answerKey) addAppendix(`${stageName}: ${getPlanLabel('answerKey')}`, answerKey, stageName);
-                if (resourcesFull.length > 150) addAppendix(`${stageName}: ${getPlanLabel('resourcesMaterials')}`, resourcesFull, stageName);
-                const resourceShort = resourcesFull.length > 150 ? resourcesFull.slice(0,150).trim() + '… (толық тізім қосымшада)' : resourcesFull;
-                const c = (t, x='') => `<td class="p-2 align-top border-r ${x}" contenteditable="true">${nl(t || '')}</td>`;
-                const tr = document.createElement('tr'); tr.className='border-b';
-                tr.innerHTML = `<td class="p-2 align-top font-bold text-indigo-900 border-r bg-slate-50">${esc(stageName)}</td>` +
-                    `<td class="p-2 align-top border-r" contenteditable="true">${renderPlanActionText(shortText(teacherShort || '-',850))}</td>` +
-                    `<td class="p-2 align-top border-r task-content" contenteditable="true">${stu || '-'}</td>` +
-                    `<td class="p-2 align-top border-r bg-amber-50/30" contenteditable="true">${ds || '-'}<div class="formative-assessment"><strong>${getPlanLabel('formative')}:</strong><div>${nl(formative || getPlanLabel('formativeDefault'))}</div></div>${ebDescriptorsHtml}</td>` +
-                    (ebkOn ? c(eb, 'ebk-col bg-emerald-50/30') : '') +
-                    c(resourceShort || '-');
-                tb.appendChild(tr);
-            });
-            const topAppendices = normalizeArray(d.appendices || d.appendix || d.қосымшалар);
-            topAppendices.forEach((a,i) => {
-                if (typeof a === 'string') addAppendix(`Қосымша ${i+1}`, a);
-                else if (a && typeof a === 'object') addAppendix(textOf(a.title || a.name) || `Қосымша ${i+1}`, a.content || a.text || a.body || a.prompt || a.task || a.description);
-            });
-            const appendixSection = document.getElementById('lessonAppendices');
-            const appendixContent = document.getElementById('appendicesContent');
-            if (appendixItems.length) {
-                appendixContent.innerHTML = appendixItems.map((a,i)=>`<article class="appendix-item"><h4>${i+1}. ${esc(a.title)}</h4>${a.stage ? `<p class="text-xs text-slate-500 mb-2">${esc(a.stage)}</p>` : ''}<div class="text-sm whitespace-pre-wrap">${nl(a.content)}</div></article>`).join('');
-                appendixSection.classList.remove('hidden');
-            } else { appendixContent.innerHTML=''; appendixSection.classList.add('hidden'); }
-            const total = document.createElement('tr');
-            total.innerHTML = `<td colspan="${ebkOn ? 6 : 5}" class="p-2 text-right font-bold">Барлығы: ${n} балл</td>`; tb.appendChild(total);
-            if (n !== 10 && !quiet) alert(`Негізгі дескрипторлар саны ${n}. ҚМЖ талаптары бойынша 10 болуы керек: басы 2 + ортасы 6 + соңы 2.`);
-            if (ebkOn && ebkTotal !== 10 && !quiet) alert(`ЕБҚ дескрипторларының жалпы саны ${ebkTotal}. ЕБҚ нұсқасы да 10 балл болуы үшін кезеңдер бойынша 2 + 6 + 2 = 10 дескриптор қажет.`);
-        }
-
-
-        // ====== Құпия деректер HTML-ге жазылмайды ======
-        // Deploy жасағаннан кейін осы екі мәнді толтырыңыз.
-        const API_ENDPOINT = 'https://qmj-generator-api.aliyarsbkv.workers.dev/';
-        const TURNSTILE_SITE_KEY = '0x4AAAAAAFS_cncqQPD5FVEZ';
-        let turnstileToken = '';
-        let turnstileWidgetId = null;
-
-        function setStatus(message, type = 'info') {
-            const el = document.getElementById('generationStatus');
-            // A missing status panel must never break lesson generation or hide the original error.
-            if (!el) { if (message) console.warn('[ҚМЖ Generator]', message); return; }
-            if (!message) {
-                el.className = 'hidden rounded-lg border p-3 text-sm';
-                el.textContent = '';
-                return;
-            }
-            const styles = {
-                info: 'border-blue-200 bg-blue-50 text-blue-800',
-                success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-                error: 'border-red-200 bg-red-50 text-red-800'
-            };
-            el.className = `rounded-lg border p-3 text-sm ${styles[type] || styles.info}`;
-            el.textContent = message;
-        }
-
-        function initTurnstile() {
-            if (!TURNSTILE_SITE_KEY || TURNSTILE_SITE_KEY.includes('PASTE_')) return;
-            const mount = () => {
-                if (!window.turnstile) return false;
-                document.getElementById('turnstileContainer').classList.remove('hidden');
-                turnstileWidgetId = window.turnstile.render('#turnstileWidget', {
-                    sitekey: TURNSTILE_SITE_KEY,
-                    callback: token => { turnstileToken = token; },
-                    'expired-callback': () => { turnstileToken = ''; },
-                    'error-callback': () => { turnstileToken = ''; setStatus('Қауіпсіздік тексеруі жүктелмеді. Бетті жаңартып көріңіз.', 'error'); }
-                });
-                return true;
-            };
-            // The deferred Turnstile script is normally ready by window.load.
-            if (!mount()) setStatus('Қауіпсіздік тексеруі жүктелмеді. Cloudflare Turnstile баптауын тексеріңіз.', 'error');
-        }
-        window.addEventListener('load', initTurnstile);
-
-        function setLoading(isLoading) {
-            const btn = document.getElementById('generateBtn');
-            btn.disabled = isLoading;
-            btn.classList.toggle('opacity-60', isLoading);
-            btn.classList.toggle('cursor-not-allowed', isLoading);
-            btn.innerHTML = isLoading
-                ? '<i class="fa-solid fa-spinner fa-spin"></i> ҚМЖ жасалып жатыр...'
-                : '<i class="fa-solid fa-wand-magic-sparkles"></i> ҚМЖ құру';
-        }
-
-        const SUBJECT_APPROACH_OPTIONS = {
-            language: [
-                ['listening','Тыңдалым: негізгі ой мен нақты ақпаратты анықтау'],
-                ['speaking','Айтылым: диалог, пікір айту немесе презентация'],
-                ['reading','Оқылым: мәтіннен ақпарат табу және түсіндіру'],
-                ['writing','Жазылым: мәтін жазу, жоспарлау және редакциялау'],
-                ['vocabulary_grammar','Лексика және грамматика контексте'],
-                ['text_analysis','Мәтіннің мақсаты, құрылымы және автор позициясын талдау'],
-                ['debate','Пікірталас және аргументация'],
-                ['creative_writing','Шығармашылық жазылым'],
-                ['communicative_situation','Коммуникативтік жағдаят / рөлдік диалог']
-            ],
-            literature: [
-                ['literary_analysis','Әдеби шығарманы талдау'],
-                ['character_analysis','Кейіпкер бейнесі мен әрекетін талдау'],
-                ['expressive_devices','Көркемдегіш құралдарды анықтау және түсіндіру'],
-                ['reading','Мәтінді оқу және түсіндіру'],
-                ['discussion','Әдеби пікірталас және дәлелді пікір'],
-                ['creative_writing','Шығармашылық жауап немесе балама аяқталым жазу'],
-                ['comparison','Шығармаларды немесе кейіпкерлерді салыстыру']
-            ],
-            history: [
-                ['source_analysis','Тарихи дереккөзді талдау'],
-                ['chronology','Хронология және себеп-салдар байланысы'],
-                ['map_work','Тарихи картамен жұмыс'],
-                ['historical_debate','Тарихи пікірталас және дәлел'],
-                ['historical_reconstruction','Тарихи реконструкция / жоба'],
-                ['perspective_analysis','Әртүрлі тарихи көзқарасты салыстыру']
-            ],
-            natural: [
-                ['phenomenon_analysis','Құбылысты немесе модельді түсіндіру'],
-                ['experiment','Эксперимент / практикалық зерттеу'],
-                ['model','Модель құру және түсіндіру'],
-                ['data_analysis','Кесте, график немесе деректерді талдау'],
-                ['cause_effect','Себеп-салдар байланысын анықтау'],
-                ['practical_case','Өмірлік жағдаятқа білімді қолдану']
-            ],
-            math: [
-                ['problem_solving','Есеп шығару және шешім жолын негіздеу'],
-                ['solution_methods','Бір есепті бірнеше тәсілмен шешу'],
-                ['error_analysis','Шешімдегі қатені табу және түзету'],
-                ['pattern_analysis','Заңдылық пен математикалық байланысты анықтау'],
-                ['mathematical_model','Математикалық модель құру'],
-                ['applied_case','Өмірлік жағдаяттағы есеп']
-            ],
-            geography: [
-                ['map_work','Картамен және кеңістіктік ақпаратпен жұмыс'],
-                ['data_analysis','Кесте, диаграмма және статистикалық деректерді талдау'],
-                ['compare_regions','Аймақтарды салыстыру'],
-                ['cause_effect','Географиялық себеп-салдар байланысы'],
-                ['environmental_case','Экологиялық немесе өмірлік кейс'],
-                ['field_inquiry','Бақылау / шағын далалық зерттеу (мүмкін болса)']
-            ],
-            informatics: [
-                ['algorithm','Алгоритмді құрастыру және тексеру'],
-                ['computational_thinking','Есепті бөліктерге жіктеу және логикалық шешім'],
-                ['coding','Кодты жазу, оқу немесе қатесін түзету'],
-                ['digital_product','Цифрлық өнім жасау'],
-                ['cybersecurity_case','Цифрлық қауіпсіздік кейсі']
-            ],
-            arts: [
-                ['design_process','Жобалау: идея, нобай, өнім, жетілдіру'],
-                ['creative_project','Шығармашылық жоба немесе орындау'],
-                ['prototype','Прототип жасау және сынау'],
-                ['critique','Өнімді критерий бойынша талдау'],
-                ['performance','Орындау / көрсету және кері байланыс']
-            ],
-            social: [
-                ['debate','Пікірталас және дәлелді көзқарас'],
-                ['case','Қоғамдық өмірдегі кейсті талдау'],
-                ['source_analysis','Дереккөз / медиа мәтінді талдау'],
-                ['decision_making','Шешім нұсқаларын салыстыру және таңдау'],
-                ['media_literacy','Ақпараттың сенімділігі мен медиасауаттылық']
-            ],
-            other: [
-                ['text_analysis','Мәтін немесе ақпаратты талдау'],
-                ['discussion','Пікірталас және дәлелдеу'],
-                ['case','Кейс / жағдаятты талдау'],
-                ['project','Жобалық жұмыс'],
-                ['problem_solving','Проблеманы шешу'],
-                ['peer_learning','Өзара оқыту']
-            ]
-        };
-        const SUBJECT_CATEGORY_LABELS = {
-            language:'Тіл пәндері', literature:'Әдебиет', history:'Тарих', natural:'Жаратылыстану',
-            math:'Математика', geography:'География', informatics:'Информатика / цифрлық технология',
-            arts:'Өнер / технология', social:'Қоғамдық пәндер', other:'Басқа пән'
-        };
-        let subjectCategoryManuallySet = false;
-
-        function detectSubjectCategory(subject) {
-            const s = String(subject || '').toLocaleLowerCase();
-            if (/(қазақ тілі|орыс тілі|ағылшын тілі|шет тілі|тіл мен әдебиет|тіл пән|language|english|russian|kazakh|грамматик|лингвист|иностранн.* язык|немецк.* язык|французск.* язык)/i.test(s)) return 'language';
-            if (/(әдебиет|литератур|literature)/i.test(s)) return 'literature';
-            if (/(тарих|history|история)/i.test(s)) return 'history';
-            if (/(биолог|хими|физик|жаратылыстану|science|biology|chemistry|physics)/i.test(s)) return 'natural';
-            if (/(математ|алгебра|геометрия|math|арифметик)/i.test(s)) return 'math';
-            if (/(географ|geography)/i.test(s)) return 'geography';
-            if (/(информатик|компьютер|программалау|coding|computer science|цифрлық технология)/i.test(s)) return 'informatics';
-            if (/(көркем еңбек|технология|музыка|бейнелеу өнер|дизайн|art|craft)/i.test(s)) return 'arts';
-            if (/(құқық|қоғамтану|экономика|азаматтану|дүниежүзі|әлеумет|social studies|civics|право)/i.test(s)) return 'social';
-            return 'other';
-        }
-
-        function updateSubjectApproachOptions() {
-            const categorySelect = document.getElementById('subjectCategory');
-            const approachSelect = document.getElementById('subjectApproach');
-            const help = document.getElementById('subjectApproachHelp');
-            if (!categorySelect || !approachSelect) return;
-            let category = categorySelect.value;
-            if (category === 'auto') category = detectSubjectCategory(document.getElementById('subject')?.value || '');
-            const previousValue = approachSelect.value;
-            const options = SUBJECT_APPROACH_OPTIONS[category] || SUBJECT_APPROACH_OPTIONS.other;
-            approachSelect.innerHTML = '<option value="auto">Оқу мақсатына қарай автоматты таңдау</option>' + options.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
-            approachSelect.value = options.some(([value]) => value === previousValue) ? previousValue : 'auto';
-            if (help) {
-                const subjectEntered = Boolean(document.getElementById('subject')?.value.trim());
-                const labels = SUBJECT_CATEGORY_LABELS[category] || 'Пән бағыты';
-                help.textContent = subjectEntered ? `Анықталған бағыт: ${labels}. Нақты форматты таңдасаңыз, ҚМЖ тапсырмалары, оқушы әрекеті және бағалау осы бағытқа сәйкестенеді.` : 'Пән атауын енгізіңіз. Ұсыныстар пән бағытына сай өзгереді; нақты таңдау жасасаңыз, генератор оны ҚМЖ мазмұнына енгізеді.';
-            }
-        }
-
-        document.getElementById('subject').addEventListener('input', function () {
-            if (!subjectCategoryManuallySet) {
-                document.getElementById('subjectCategory').value = this.value.trim() ? detectSubjectCategory(this.value) : 'auto';
-                updateSubjectApproachOptions();
-            }
-        });
-        document.getElementById('subjectCategory').addEventListener('change', function () {
-            subjectCategoryManuallySet = this.value !== 'auto';
-            updateSubjectApproachOptions();
-        });
-        updateSubjectApproachOptions();
-
-        document.getElementById('ebkEnabled').addEventListener('change', function() {
-            document.getElementById('ebkOptions').classList.toggle('hidden', !this.checked);
-            if (currentRenderedData) render(currentRenderedData, true);
-            else document.getElementById('ebkColumnHeader').hidden = !this.checked;
-        });
-
-        const PLAN_LABELS = {
-            kk: {topic:'Сабақтың тақырыбы:', objective:'Оқу бағдарламасына сәйкес оқыту мақсаты: (оқу мақсаты)', thinking:'Блум таксономиясы бойынша ойлау деңгейі:', goal:'Сабақтың мақсаты:', values:'Құндылықтар:', educational:'Тәрбиелік мақсат:', quote:'Аптаның дәйексөзі:', stage:'Кезең / Уақыт', teacher:'Мұғалім әрекеті', student:'Оқушы әрекеті', assessment:'Бағалау', ebk:'ЕБҚ оқушыларына қолдау', resources:'Ресурстар', appendices:'Сабаққа арналған қосымшалар', appendixHelp:'Толық тапсырма мәтіндері, оқушыға берілетін материалдар, ЖИ промпттары және жауап кілттері.', aiWork:'ЖИ ЖҰМЫС', descriptor:'Дескриптор', points:'Балл', ebkTask:'ЕБҚ оқушысына арналған тапсырма', ebkDescriptors:'ЕБҚ дескрипторлары', formative:'Қалыптастырушы бағалау', formativeDefault:'Мұғалім жауаптарды дескрипторлар бойынша тексеріп, дұрыс жауапты атап, қатені түзетуге қысқа кері байланыс береді.', reflection:'Рефлексия (сабақ соңында):', supportTypes:'Қолдау түрлері:', taskAdaptation:'Тапсырманы бейімдеу:', shortStepsDefault:'Тапсырманы шағын қадамдарға бөлу, тірек сөздер мен үлгі ұсыну', shortInstructionsDefault:'Қадамдық нұсқаулық, қысқа әрі нақты нұсқаулар', fullTaskText:'тапсырманың толық мәтіні', studentFullGuide:'оқушыға арналған толық нұсқаулық', aiPrompt:'ЖИ промпты', teacherExplanationNote:'мұғалімге арналған түсіндіру жазбасы', teacherFullExplanation:'мұғалімнің толық түсіндіруі', answerKey:'жауап кілті / күтілетін жауаптар', resourcesMaterials:'ресурстар мен материалдар', thinkingMap:{'Білу / еске түсіру':'Білу / еске түсіру','Түсіну':'Түсіну','Қолдану':'Қолдану','Талдау':'Талдау','Жинақтау / синтездеу':'Жинақтау / синтездеу','Бағалау / пайымдау':'Бағалау / пайымдау'}, orgName:'Білім беру ұйымының атауы', subjectLabel:'Пәні:', unitLabel:'Бөлім:', teacherName:'Педагогтің аты-жөні:', classLabel:'Сынып:', attending:'Қатысушылар саны:', absent:'Қатыспағандар саны:'},
-            ru: {topic:'Тема урока:', objective:'Цель обучения:', thinking:'Уровни мышления по таксономии Блума:', goal:'Цель урока:', values:'Ценности:', educational:'Воспитательная цель:', quote:'Цитата недели:', stage:'Этап / время', teacher:'Действия учителя', student:'Действия ученика', assessment:'Оценивание', ebk:'Поддержка учащихся с ООП', resources:'Ресурсы', appendices:'Материалы к уроку', appendixHelp:'Полные тексты заданий, материалы для учащихся, промпты ИИ и ключи ответов.', aiWork:'ЗАДАНИЕ С ИИ', descriptor:'Дескриптор', points:'Баллы', ebkTask:'Адаптированное задание для учащегося с ООП', ebkDescriptors:'Дескрипторы адаптированного задания', formative:'Формативное оценивание', formativeDefault:'Учитель проверяет ответы по дескрипторам, отмечает верные решения и даёт краткую обратную связь для исправления ошибки.', reflection:'Рефлексия (в конце урока):', supportTypes:'Виды поддержки:', taskAdaptation:'Адаптация задания:', shortStepsDefault:'Разделить задание на небольшие шаги, предложить опорные слова и образец', shortInstructionsDefault:'Пошаговая инструкция, короткие и понятные указания', fullTaskText:'полный текст задания', studentFullGuide:'полная инструкция для ученика', aiPrompt:'промпт для ИИ', teacherExplanationNote:'пояснение для учителя', teacherFullExplanation:'полное объяснение учителя', answerKey:'ключ ответов / ожидаемые ответы', resourcesMaterials:'ресурсы и материалы', thinkingMap:{'Білу / еске түсіру':'Знание / воспроизведение','Түсіну':'Понимание','Қолдану':'Применение','Талдау':'Анализ','Жинақтау / синтездеу':'Синтез / создание','Бағалау / пайымдау':'Оценивание / аргументация'}, orgName:'Название организации образования', subjectLabel:'Предмет:', unitLabel:'Раздел:', teacherName:'ФИО педагога:', classLabel:'Класс:', attending:'Количество присутствующих:', absent:'Количество отсутствующих:'},
-            en: {topic:'Lesson topic:', objective:'Learning objective:', thinking:'Bloom’s taxonomy thinking levels:', goal:'Lesson objective:', values:'Values:', educational:'Educational aim:', quote:'Quote of the week:', stage:'Stage / Time', teacher:'Teacher actions', student:'Student actions', assessment:'Assessment', ebk:'Support for students with SEN', resources:'Resources', appendices:'Lesson materials', appendixHelp:'Full task texts, student handouts, AI prompts, and answer keys.', aiWork:'AI ACTIVITY', descriptor:'Descriptor', points:'Points', ebkTask:'Adapted task for a student with SEN', ebkDescriptors:'Adapted-task descriptors', formative:'Formative assessment', formativeDefault:'The teacher checks responses against the descriptors, highlights correct answers, and gives brief feedback to address errors.', reflection:'Reflection (at the end of the lesson):', supportTypes:'Types of support:', taskAdaptation:'Task adaptation:', shortStepsDefault:'Break the task into small steps and provide keywords and an example', shortInstructionsDefault:'Step-by-step guidance with short, clear instructions', fullTaskText:'full task text', studentFullGuide:'full student instructions', aiPrompt:'AI prompt', teacherExplanationNote:'teacher explanation notes', teacherFullExplanation:'full teacher explanation', answerKey:'answer key / expected answers', resourcesMaterials:'resources and materials', thinkingMap:{'Білу / еске түсіру':'Remembering','Түсіну':'Understanding','Қолдану':'Applying','Талдау':'Analyzing','Жинақтау / синтездеу':'Creating / synthesizing','Бағалау / пайымдау':'Evaluating / reasoning'}, orgName:'Name of the educational organization', subjectLabel:'Subject:', unitLabel:'Unit:', teacherName:'Teacher’s name:', classLabel:'Grade:', attending:'Number of students present:', absent:'Number of students absent:'}
-        };
-        function getPlanLabel(key) {
-            const lang = document.getElementById('outputLanguage')?.value || 'kk';
-            return PLAN_LABELS[lang]?.[key] || PLAN_LABELS.kk[key] || key;
-        }
-        function applyOutputLanguageLabels() {
-            const lang = document.getElementById('outputLanguage')?.value || 'kk';
-            const L = PLAN_LABELS[lang] || PLAN_LABELS.kk;
-            const outputLabels = {labelOutTopic:L.topic,labelOutObjective:L.objective,labelOutThinking:L.thinking,labelOutGoal:L.goal,labelOutValues:L.values,labelOutEducational:L.educational,labelOutQuote:L.quote};
-            Object.entries(outputLabels).forEach(([id, value]) => { const el=document.getElementById(id); if(el) el.textContent=value; });
-            const staticLabels = {labelOrgName:L.orgName,labelSubject:L.subjectLabel,labelUnit:L.unitLabel,labelTeacherName:L.teacherName,labelClass:L.classLabel,labelAttending:L.attending,labelAbsent:L.absent,labelStage:L.stage,labelTeacherActions:L.teacher,labelStudentActions:L.student,labelAssessment:L.assessment,labelEbk:L.ebk,labelResources:L.resources};
-            Object.entries(staticLabels).forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
-            const appTitle=document.querySelector('#lessonAppendices h3'); if(appTitle) appTitle.textContent=L.appendices;
-            const appHelp=document.querySelector('#lessonAppendices p'); if(appHelp) appHelp.textContent=L.appendixHelp;
-        }
-        document.getElementById('outputLanguage')?.addEventListener('change', applyOutputLanguageLabels);
-        applyOutputLanguageLabels();
-
-        async function generateKMZH() {
-            const v = id => document.getElementById(id).value.trim();
-            const p = {
-                outputLanguage: v('outputLanguage') || 'kk',
-                subject: v('subject'),
-                grade: v('grade'),
-                unit: v('unit'),
-                topic: v('topic'),
-                objective: v('objective'),
-                ownTask: v('ownTask'),
-                ownTaskMaxScore: Number(v('ownTaskMaxScore') || 10),
-                ownTaskEbkEnabled: document.getElementById('ownTaskEbkEnabled')?.checked ?? true,
-                thinkingLevels: Array.from(document.querySelectorAll('input[name="thinkingLevel"]:checked')).map(el => el.value),
-                weeklyQuote: v('weeklyQuote'),
-                lessonType: v('lessonType') || 'auto',
-                subjectCategory: v('subjectCategory') === 'auto' ? detectSubjectCategory(v('subject')) : v('subjectCategory'),
-                subjectApproach: v('subjectApproach') || 'auto',
-                aiTools: Array.from(document.querySelectorAll('input[name="aiTool"]:checked')).map(el => el.value),
-                ebkEnabled: document.getElementById('ebkEnabled').checked,
-                ebkNeeds: Array.from(document.querySelectorAll('input[name="ebkNeed"]:checked')).map(el => el.value),
-                ebkOther: v('ebkOther')
-            };
-
-            const missing = [];
-            if (!p.subject) missing.push('пән');
-            if (!p.grade) missing.push('сынып');
-            if (!p.unit) missing.push('бөлім');
-            if (!p.topic) missing.push('сабақ тақырыбы');
-            if (!p.objective) missing.push('оқу мақсаты');
-            if (p.ownTask.length > 8000) {
-                setStatus('Өз тапсырмаңыз 8000 таңбадан аспауы керек.', 'error');
-                return;
-            }
-            if (missing.length) {
-                setStatus('Мына өрістерді толтырыңыз: ' + missing.join(', ') + '.', 'error');
-                return;
-            }
-            if (!API_ENDPOINT || API_ENDPOINT.includes('PASTE_')) {
-                setStatus('Сервер мекенжайы бапталмаған. Әкімшіге хабарласыңыз.', 'error');
-                return;
-            }
-            if (!supabaseAuthClient) {
-                setStatus('Supabase клиенті жүктелмеді. Бетті жаңартып көріңіз.', 'error');
-                return;
-            }
-            const { data: sessionInfo, error: sessionError } = await supabaseAuthClient.auth.getSession();
-            const accessToken = sessionInfo?.session?.access_token;
-            if (sessionError || !accessToken) {
-                setStatus('ҚМЖ құру үшін алдымен аккаунтқа кіріңіз.', 'error');
-                openAuthModal('login');
-                return;
-            }
-            if (!TURNSTILE_SITE_KEY || TURNSTILE_SITE_KEY.includes('PASTE_')) {
-                setStatus('Қауіпсіздік тексеруі әлі бапталмаған. Turnstile Site Key орнатылғаннан кейін генерация жұмыс істейді.', 'error');
-                return;
-            }
-            if (!turnstileToken) {
-                setStatus('Алдымен қауіпсіздік тексеруінен өтіңіз.', 'error');
-                return;
-            }
-
-            setLoading(true);
-            setStatus('Жасанды интеллект сабақ жоспарын құрастырып жатыр. Бұл сәл уақыт алуы мүмкін...', 'info');
-            try {
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-                    body: JSON.stringify({ ...p, turnstileToken })
-                });
-                const payload = await response.json().catch(() => ({}));
-                if (payload.balance) renderGenerationBalance(payload.balance);
-                if (!response.ok) {
-                    if (payload.limitReached) {
-                        setStatus(payload.error || 'Тегін генерациялар аяқталды.', 'error');
-                        window.setTimeout(openPackageModal, 150);
-                        return;
-                    }
-                    throw new Error(payload.error || `Сервер қатесі (${response.status}).`);
-                }
-
-                const d = payload.plan || payload;
-                if (!d || !Array.isArray(d.stages) || d.stages.length !== 3) {
-                    throw new Error('Сервер үш кезеңнен тұратын ҚМЖ қайтармады. Қайталап көріңіз.');
-                }
-                const counts = d.stages.map(s => Array.isArray(s.descriptors) ? s.descriptors.length : 0);
-                if (counts[0] !== 2 || counts[1] !== 6 || counts[2] !== 2) {
-                    throw new Error('ЖИ негізгі дескрипторларды 2 + 6 + 2 үлгісімен жасай алмады. Қайталап генерациялаңыз.');
-                }
-
-                setTextIfPresent('outTopic', textOf(getField(d, ['topic','translatedTopic'])) || p.topic);
-                setTextIfPresent('outSubject', textOf(getField(d, ['subject','translatedSubject'])) || p.subject);
-                setTextIfPresent('outGrade', p.outputLanguage === 'ru' ? p.grade + '-й класс' : p.outputLanguage === 'en' ? 'Grade ' + p.grade : p.grade + '-сынып');
-                setTextIfPresent('outUnit', textOf(getField(d, ['unit','translatedUnit'])) || p.unit);
-                setTextIfPresent('outObjective', textOf(getField(d, ['objective','translatedObjective'])) || p.objective);
-                const thinkingRaw = textOf(getField(d, ['thinkingLevelsUsed','thinking_levels_used']));
-                const selectedThinking = p.thinkingLevels.length ? p.thinkingLevels.join(', ') : thinkingRaw;
-                const thinkingMap = (PLAN_LABELS[p.outputLanguage] || PLAN_LABELS.kk).thinkingMap || {};
-                const thinkingLocalized = selectedThinking.split(/[,;，]+/).map(x => thinkingMap[x.trim()] || x.trim()).filter(Boolean).join(', ');
-                setTextIfPresent('outThinkingLevels', thinkingLocalized || (p.outputLanguage === 'ru' ? 'Выбраны автоматически в соответствии с целью обучения' : p.outputLanguage === 'en' ? 'Selected automatically based on the learning objective' : 'Оқу мақсатына сай автоматты түрде таңдалды'));
-                render(d);
-                setStatus(p.outputLanguage === 'ru' ? 'План урока готов! При необходимости отредактируйте таблицу и сохраните в Word или PDF.' : p.outputLanguage === 'en' ? 'Lesson plan is ready! Edit the table if needed and save as Word or PDF.' : 'ҚМЖ дайын! Кестедегі мәтінді қажет болса өңдеп, Word немесе PDF түрінде сақтаңыз.', 'success');
-                document.getElementById('kmzhContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } catch (error) {
-                const message = error && error.message ? error.message : 'Белгісіз қате.';
-                setStatus('ҚМЖ жасалмады: ' + message, 'error');
-            } finally {
-                setLoading(false);
-                turnstileToken = '';
-                if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
-                refreshGenerationBalance();
-            }
-        }
-
-
-                // Export Document to DOCX
-        function exportToWord() {
-            const topic = document.getElementById('outTopic')?.innerText || 'KMZh';
-            const content = document.getElementById('kmzhContainer').innerHTML;
-
-            const htmlDocument = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <title>${topic}</title>
-                    <style>
-                        body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; }
-                        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-                        th, td { border: 1px solid #000000; padding: 6px; text-align: left; vertical-align: top; }
-                        th { background-color: #f2f2f2; font-weight: bold; }
-                        h2 { text-align: center; color: #1a365d; }
-                    </style>
-                </head>
-                <body>
-                    ${content}
-                </body>
-                </html>
-            `;
-
-            const converted = htmlDocx.asBlob(htmlDocument, {orientation: "landscape"});
-            saveAs(converted, `${topic}_ҚМЖ.docx`);
-        }
-
-
-        // ===== Kaspi Pay package UI (manual payment confirmation) =====
-        const KASPI_REMOTE_PAYMENT_URL = 'https://pay.kaspi.kz/pay/qcxjykr8';
-        // Public launch: one paid package only. Admin grant tooling remains separate.
-        const KASPI_PACKAGES = {
-            50: { lessons: 50, price: 3990, formatted: '3 990 ₸' }
-        };
-        let selectedKaspiPackage = null;
-
-        function openPackageModal() {
-            if (!currentAuthUser) {
-                openAuthModal('login');
-                return;
-            }
-            document.getElementById('kaspiPaymentInstructions').classList.add('hidden');
-            document.getElementById('packageModal').classList.remove('hidden');
-            document.body.classList.add('overflow-hidden');
-        }
-
-        function closePackageModal() {
-            document.getElementById('packageModal').classList.add('hidden');
-            document.body.classList.remove('overflow-hidden');
-        }
-
-        async function startKaspiPayment(lessonCount) {
-            const pkg = KASPI_PACKAGES[lessonCount];
-            if (!pkg) return;
-            if (!currentAuthUser || !currentAuthUser.email || !supabaseAuthClient) {
-                setStatus('Пакетті сатып алу үшін аккаунтқа кіріңіз.', 'error');
-                closePackageModal(); openAuthModal('login'); return;
-            }
-            const button = document.querySelector('#packageModal button[onclick="startKaspiPayment(50)"]');
-            const oldText = button ? button.textContent : '';
-            // Open a blank tab synchronously from the click so the browser does not block Kaspi after await.
-            const paymentWindow = window.open('about:blank', '_blank');
-            if (button) { button.disabled = true; button.textContent = 'Тапсырыс жасалуда…'; }
-            try {
-                const { data: sessionInfo, error: sessionError } = await supabaseAuthClient.auth.getSession();
-                const accessToken = sessionInfo?.session?.access_token;
-                if (sessionError || !accessToken) throw new Error('Аккаунт сеансы аяқталды. Қайта кіріңіз.');
-                const response = await fetch(`${API_ENDPOINT}?action=order-create`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-                    body: JSON.stringify({ lessons: pkg.lessons })
-                });
-                const payload = await response.json().catch(() => ({}));
-                if (!response.ok || !payload.ok || !payload.order) throw new Error(payload.error || 'Тапсырыс жасау мүмкін болмады.');
-                selectedKaspiPackage = pkg;
-                const reference = `QMJ ${payload.order.order_code} | ${currentAuthUser.email}`;
-                document.getElementById('kaspiChosenPackage').textContent = `${pkg.lessons} ҚМЖ пакеті — ${pkg.formatted} · Тапсырыс ${payload.order.order_code}`;
-                document.getElementById('kaspiPaymentReference').value = reference;
-                document.getElementById('kaspiPaymentInstructions').classList.remove('hidden');
-                setStatus(`Тапсырыс ${payload.order.order_code} жасалды. Kaspi-дегі хабарламаға осы кодты енгізіңіз. Төлем тексерілгеннен кейін пакет есепке қосылады.`, 'success');
-                if (paymentWindow) paymentWindow.location.href = KASPI_REMOTE_PAYMENT_URL;
-                else setStatus('Тапсырыс жасалды, бірақ браузер жаңа терезені бұғаттады. Kaspi сілтемесін ашыңыз: ' + KASPI_REMOTE_PAYMENT_URL, 'info');
-            } catch (error) {
-                if (paymentWindow) paymentWindow.close();
-                setStatus(error?.message || 'Тапсырыс жасау мүмкін болмады.', 'error');
-            } finally {
-                if (button) { button.disabled = false; button.textContent = oldText; }
-            }
-        }
-
-        async function copyKaspiPaymentReference() {
-            const input = document.getElementById('kaspiPaymentReference');
-            if (!input || !input.value) return;
-            try {
-                await navigator.clipboard.writeText(input.value);
-                const button = document.querySelector('#kaspiPaymentInstructions button[onclick="copyKaspiPaymentReference()"]');
-                if (button) {
-                    const old = button.innerHTML;
-                    button.innerHTML = '<i class="fa-solid fa-check mr-1"></i>Көшірілді';
-                    window.setTimeout(() => { button.innerHTML = old; }, 1800);
-                }
-            } catch (_) {
-                input.focus(); input.select();
-                setStatus('Төлем түсініктемесі белгіленді. Ctrl + C арқылы көшіріңіз.', 'info');
-            }
-        }
-
-        // ===== Supabase Authentication =====
-        // Бұл браузерде тек publishable key қолданылады. Secret/service_role кілттерін HTML-ге ЕШҚАШАН қоспаңыз.
-        const SUPABASE_URL = 'https://ezprpaipscfgzhagdwkz.supabase.co';
-        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_lDJaLKMV0LZ3Q-C7S_7jMg_FoV0MKst';
-        let supabaseAuthClient = null;
-        let authMode = 'login';
-        let currentAuthUser = null;
-        let authFlowHandled = false;
-        const initialAuthFlowType = (() => {
-            try {
-                const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-                const query = new URLSearchParams(window.location.search);
-                return hash.get('type') || query.get('type') || '';
-            } catch (_) { return ''; }
-        })();
-
-        function setAuthStatus(message, kind = 'info') {
-            const el = document.getElementById('authStatus');
-            if (!el) return;
-            if (!message) {
-                el.className = 'hidden rounded-lg border px-3 py-2.5 text-sm';
-                el.textContent = '';
-                return;
-            }
-            const palette = {
-                info: 'border-blue-200 bg-blue-50 text-blue-800',
-                success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-                error: 'border-red-200 bg-red-50 text-red-800'
-            };
-            el.className = `rounded-lg border px-3 py-2.5 text-sm ${palette[kind] || palette.info}`;
-            el.textContent = message;
-        }
-
-        let generationBalanceRequestInFlight = false;
-
-        function renderGenerationBalance(balance) {
-            const el = document.getElementById('generationBalance');
-            if (!el) return;
-            if (!currentAuthUser || !balance || balance.ok === false) {
-                el.classList.add('hidden');
-                el.textContent = '';
-                return;
-            }
-            const free = Number(balance.free_remaining || 0);
-            const paid = Number(balance.paid_remaining || 0);
-            el.textContent = `Тегін: ${free} · Пакет: ${paid}`;
-            el.title = `Қалған ҚМЖ: ${Number(balance.total_remaining ?? (free + paid))}`;
-            el.classList.remove('hidden');
-        }
-
-        async function refreshGenerationBalance() {
-            if (generationBalanceRequestInFlight) return;
-            const el = document.getElementById('generationBalance');
-            if (!supabaseAuthClient || !currentAuthUser) {
-                if (el) { el.classList.add('hidden'); el.textContent = ''; }
-                return;
-            }
-            generationBalanceRequestInFlight = true;
-            try {
-                const { data, error } = await supabaseAuthClient.auth.getSession();
-                if (error || !data?.session?.access_token) { renderGenerationBalance(null); return; }
-                const response = await fetch(`${API_ENDPOINT}?action=balance`, {
-                    method: 'GET',
-                    headers: { 'Authorization': `Bearer ${data.session.access_token}` }
-                });
-                const payload = await response.json().catch(() => ({}));
-                if (response.ok && payload.balance) renderGenerationBalance(payload.balance);
-                else {
-                    if (el) {
-                        el.textContent = 'Баланс тексерілмеді';
-                        el.title = payload.error || 'Баланс қызметі қолжетімсіз';
-                        el.classList.remove('hidden');
-                    }
-                }
-            } catch (error) {
-                if (el) {
-                    el.textContent = 'Баланс тексерілмеді';
-                    el.title = 'Сервермен байланыс болмады';
-                    el.classList.remove('hidden');
-                }
-            } finally {
-                generationBalanceRequestInFlight = false;
-            }
-        }
-
-        function renderAuthControls() {
-            const openBtn = document.getElementById('openAuthBtn');
-            const logoutBtn = document.getElementById('logoutBtn');
-            const userLabel = document.getElementById('authUserLabel');
-            const buyPackagesBtn = document.getElementById('buyPackagesBtn');
-            if (!openBtn || !logoutBtn || !userLabel) return;
-            if (currentAuthUser) {
-                openBtn.classList.add('hidden');
-                logoutBtn.classList.remove('hidden');
-                if (buyPackagesBtn) buyPackagesBtn.classList.remove('hidden');
-                userLabel.classList.remove('hidden');
-                userLabel.textContent = currentAuthUser.email || 'Аккаунт';
-                userLabel.title = currentAuthUser.email || '';
-            } else {
-                openBtn.classList.remove('hidden');
-                logoutBtn.classList.add('hidden');
-                if (buyPackagesBtn) buyPackagesBtn.classList.add('hidden');
-                userLabel.classList.add('hidden');
-                userLabel.textContent = '';
-                userLabel.title = '';
-            }
-            refreshGenerationBalance();
-        }
-
-        function updateAuthDialogLayout() {
-            const updatePasswordMode = authMode === 'updatePassword';
-            const signupMode = authMode === 'signup';
-            const loginMode = authMode === 'login';
-            document.getElementById('authTabs').classList.toggle('hidden', updatePasswordMode);
-            document.getElementById('authEmailWrap').classList.toggle('hidden', updatePasswordMode);
-            document.getElementById('authEmail').disabled = updatePasswordMode;
-            document.getElementById('authEmail').required = !updatePasswordMode;
-            document.getElementById('authPasswordLabel').textContent = updatePasswordMode ? 'Жаңа құпиясөз' : 'Құпиясөз';
-            document.getElementById('authPassword').autocomplete = updatePasswordMode || signupMode ? 'new-password' : 'current-password';
-            document.getElementById('authPassword').placeholder = updatePasswordMode ? 'Жаңа құпиясөз (кемінде 8 таңба)' : 'Кемінде 8 таңба';
-            document.getElementById('authPassword').minLength = 8;
-            document.getElementById('authConfirmPasswordWrap').classList.toggle('hidden', !(signupMode || updatePasswordMode));
-            document.getElementById('authConfirmPassword').required = signupMode || updatePasswordMode;
-            document.getElementById('authConfirmPassword').disabled = !(signupMode || updatePasswordMode);
-            document.getElementById('authResetBtn').classList.toggle('hidden', !loginMode);
-            document.getElementById('authLoginTab').className = `rounded-lg font-semibold text-sm py-2 ${loginMode ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
-            document.getElementById('authSignupTab').className = `rounded-lg font-semibold text-sm py-2 ${signupMode ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
-            document.getElementById('authTitle').textContent = updatePasswordMode ? 'Құпиясөз орнату' : (signupMode ? 'Тіркелу' : 'Кіру');
-            document.getElementById('authSubtitle').textContent = updatePasswordMode
-                ? 'Аккаунтты аяқтау үшін жаңа құпиясөз орнатыңыз.'
-                : (signupMode ? 'Электрондық пошта арқылы жаңа аккаунт жасаңыз.' : 'ҚМЖ генераторына аккаунтыңыз арқылы кіріңіз.');
-            document.getElementById('authSubmitBtn').textContent = updatePasswordMode ? 'Құпиясөзді сақтау' : (signupMode ? 'Тіркелу' : 'Кіру');
-            document.getElementById('authFooterNote').textContent = updatePasswordMode
-                ? 'Құпиясөз кемінде 8 таңбадан тұруы керек.'
-                : (signupMode ? 'Тіркелгеннен кейін электрондық поштаңызды растау туралы хат келеді.' : 'Аккаунтыңыз жоқ па? «Тіркелу» батырмасын таңдаңыз.');
-        }
-
-        function openAuthModal(mode = 'login') {
-            authMode = mode;
-            updateAuthDialogLayout();
-            setAuthStatus('', 'info');
-            document.getElementById('authModal').classList.remove('hidden');
-            document.body.classList.add('overflow-hidden');
-            window.setTimeout(() => {
-                const field = authMode === 'updatePassword' ? document.getElementById('authPassword') : document.getElementById('authEmail');
-                if (field && !field.disabled) field.focus();
-            }, 30);
-        }
-
-        function closeAuthModal() {
-            document.getElementById('authModal').classList.add('hidden');
-            document.body.classList.remove('overflow-hidden');
-        }
-
-        function switchAuthMode(mode) {
-            if (mode !== 'login' && mode !== 'signup') return;
-            authMode = mode;
-            document.getElementById('authPassword').value = '';
-            document.getElementById('authConfirmPassword').value = '';
-            updateAuthDialogLayout();
-            setAuthStatus('', 'info');
-        }
-
-        function getAuthRedirectUrl() {
-            // Uses the current public site, so local preview or a future custom domain doesn't require hardcoding here.
-            return window.location.origin + window.location.pathname;
-        }
-
-        async function handleAuthSubmit(event) {
-            event.preventDefault();
-            if (!supabaseAuthClient) {
-                setAuthStatus('Supabase клиенті жүктелмеді. Бетті жаңартып көріңіз.', 'error');
-                return;
-            }
-            const email = document.getElementById('authEmail').value.trim();
-            const password = document.getElementById('authPassword').value;
-            const confirmPassword = document.getElementById('authConfirmPassword').value;
-            const submit = document.getElementById('authSubmitBtn');
-            if (password.length < 8) {
-                setAuthStatus('Құпиясөз кемінде 8 таңбадан тұруы керек.', 'error');
-                return;
-            }
-            if ((authMode === 'signup' || authMode === 'updatePassword') && password !== confirmPassword) {
-                setAuthStatus('Құпиясөздер бірдей емес. Қайта тексеріңіз.', 'error');
-                return;
-            }
-            submit.disabled = true;
-            const oldText = submit.textContent;
-            submit.textContent = 'Күте тұрыңыз...';
-            try {
-                if (authMode === 'signup') {
-                    const { data, error } = await supabaseAuthClient.auth.signUp({
-                        email,
-                        password,
-                        options: { emailRedirectTo: getAuthRedirectUrl() }
-                    });
-                    if (error) throw error;
-                    if (data && data.session) {
-                        currentAuthUser = data.session.user;
-                        renderAuthControls();
-                        setAuthStatus('Аккаунт сәтті құрылды. Қош келдіңіз!', 'success');
-                        window.setTimeout(closeAuthModal, 1200);
-                    } else {
-                        setAuthStatus('Тіркелу сұранысы қабылданды. Электрондық поштаңызды ашып, растау сілтемесін басыңыз. Спам бумасын да тексеріңіз.', 'success');
-                    }
-                } else if (authMode === 'login') {
-                    const { data, error } = await supabaseAuthClient.auth.signInWithPassword({ email, password });
-                    if (error) throw error;
-                    currentAuthUser = data.user || data.session?.user || null;
-                    renderAuthControls();
-                    setAuthStatus('Сәтті кірдіңіз!', 'success');
-                    window.setTimeout(closeAuthModal, 700);
-                } else if (authMode === 'updatePassword') {
-                    const { error } = await supabaseAuthClient.auth.updateUser({ password });
-                    if (error) throw error;
-                    setAuthStatus('Құпиясөз сақталды. Енді осы құпиясөзбен кіре аласыз.', 'success');
-                    window.setTimeout(() => {
-                        closeAuthModal();
-                        switchAuthMode('login');
-                    }, 1800);
-                }
-            } catch (error) {
-                const message = error?.message || 'Сұраныс орындалмады. Қайталап көріңіз.';
-                setAuthStatus(message, 'error');
-            } finally {
-                submit.disabled = false;
-                submit.textContent = oldText;
-            }
-        }
-
-        async function sendPasswordReset() {
-            if (!supabaseAuthClient) {
-                setAuthStatus('Supabase клиенті жүктелмеді. Бетті жаңартып көріңіз.', 'error');
-                return;
-            }
-            const email = document.getElementById('authEmail').value.trim();
-            if (!email) {
-                setAuthStatus('Алдымен электрондық поштаңызды енгізіңіз.', 'error');
-                document.getElementById('authEmail').focus();
-                return;
-            }
-            try {
-                const { error } = await supabaseAuthClient.auth.resetPasswordForEmail(email, { redirectTo: getAuthRedirectUrl() });
-                if (error) throw error;
-                setAuthStatus('Құпиясөзді қалпына келтіру сілтемесі жіберілсе, ол электрондық поштаңызға келеді. Спам бумасын да тексеріңіз.', 'success');
-            } catch (error) {
-                setAuthStatus(error?.message || 'Хатты жіберу мүмкін болмады.', 'error');
-            }
-        }
-
-        async function logoutUser() {
-            if (!supabaseAuthClient) return;
-            const { error } = await supabaseAuthClient.auth.signOut();
-            if (error) {
-                window.alert('Аккаунттан шығу мүмкін болмады: ' + error.message);
-                return;
-            }
-            currentAuthUser = null;
-            renderAuthControls();
-        }
-
-        async function initializeSupabaseAuth() {
-            const url = SUPABASE_URL;
-            const key = SUPABASE_PUBLISHABLE_KEY;
-            if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-                setAuthStatus('Supabase кітапханасы жүктелмеді. Интернет байланысын тексеріңіз.', 'error');
-                return;
-            }
-            supabaseAuthClient = window.supabase.createClient(url, key, {
-                auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
-            });
-            document.getElementById('authForm').addEventListener('submit', handleAuthSubmit);
-            const { data, error } = await supabaseAuthClient.auth.getSession();
-            if (error) console.warn('Supabase session could not be read:', error.message);
-            currentAuthUser = data?.session?.user || null;
-            renderAuthControls();
-            supabaseAuthClient.auth.onAuthStateChange((event, session) => {
-                currentAuthUser = session?.user || null;
-                renderAuthControls();
-                if (!authFlowHandled && session && (initialAuthFlowType === 'invite' || initialAuthFlowType === 'recovery')) {
-                    authFlowHandled = true;
-                    window.setTimeout(() => {
-                        openAuthModal('updatePassword');
-                        setAuthStatus(initialAuthFlowType === 'invite' ? 'Шақыру қабылданды. Аккаунт үшін құпиясөз орнатыңыз.' : 'Қалпына келтіру сілтемесі қабылданды. Жаңа құпиясөз орнатыңыз.', 'info');
-                    }, 100);
-                }
-            });
-            if (data?.session && (initialAuthFlowType === 'invite' || initialAuthFlowType === 'recovery') && !authFlowHandled) {
-                authFlowHandled = true;
-                openAuthModal('updatePassword');
-                setAuthStatus(initialAuthFlowType === 'invite' ? 'Шақыру қабылданды. Аккаунт үшін құпиясөз орнатыңыз.' : 'Жаңа құпиясөз орнатыңыз.', 'info');
-            }
-            // Remove one-time tokens from the address bar after Supabase has had a chance to process them.
-            if (data?.session && window.location.hash && /access_token=|refresh_token=/.test(window.location.hash)) {
-                window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
-            }
-        }
-
-        document.addEventListener('keydown', event => {
-            if (event.key === 'Escape') { closeAuthModal(); closePackageModal(); }
-        });
-        document.getElementById('packageModal').addEventListener('click', event => {
-            if (event.target.id === 'packageModal') closePackageModal();
-        });
-        document.getElementById('authModal').addEventListener('click', event => {
-            if (event.target.id === 'authModal') closeAuthModal();
-        });
-        initializeSupabaseAuth().catch(error => {
-            console.error('Supabase initialization error:', error);
-            renderAuthControls();
-        });
-
-    </script>
-</body>
-</html>
+ҚМЖ GENERATOR — ТІРКЕЛУДІ РАСТАУ ТУРАЛЫ ХАБАРЛАМА
+
+МАҢЫЗДЫ: Бұл код сайттың FRONTEND/интерфейсіне арналған. Cloudflare Worker кодының орнына қоймаңыз.
+
+ҚАЙ ЖЕРГЕ ҚОЮ КЕРЕК
+1. GitHub-та сайттың интерфейс файлын ашыңыз (көбіне index.html немесе тіркелу формасы орналасқан .jsx/.tsx файл).
+2. Қазіргі мына хабарламаны табыңыз:
+   «Тіркелгеннен кейін электрондық поштаңызды растау туралы хат келеді.»
+3. Сол ескі хабарлама блогын төмендегі HTML бөлігімен ауыстырыңыз.
+4. CSS бөлігі сол HTML файлының <head> ішіндегі <style> бөлігіне немесе сайттың негізгі CSS файлына қосылады.
+5. Кодты сақтап, сайтты жариялаған соң жаңа тест аккаунтпен тексеріңіз.
+
+HTML — ЕСКІ ХАБАРЛАМАНЫҢ ОРНЫНА ҚОЮ:
+
+<div class="email-confirmation-notice" role="alert" aria-live="polite">
+  <div class="email-confirmation-heading">
+    <span class="email-confirmation-icon" aria-hidden="true">✉️</span>
+    <h2>Тіркелу әлі аяқталған жоқ!</h2>
+  </div>
+
+  <p class="email-confirmation-intro">
+    <strong>ҚМЖ Generator-ды пайдалану үшін электрондық поштаңызды растауыңыз қажет.</strong>
+    Төмендегі 3 қадамды міндетті түрде орындаңыз:
+  </p>
+
+  <ol class="email-confirmation-steps">
+    <li>
+      <span class="email-step-number">1</span>
+      <div>
+        <strong>Осы беттен шығып, электрондық поштаңызды ашыңыз.</strong>
+        <p>Тіркелу кезінде жазған поштаңызды ашыңыз (Gmail немесе басқа пошта сервисі).</p>
+      </div>
+    </li>
+    <li>
+      <span class="email-step-number">2</span>
+      <div>
+        <strong>ҚМЖ Generator жіберген хатты табыңыз.</strong>
+        <p>Хат көрінбесе, «Спам», «Жарнамалар» немесе «Барлық хаттар» бөлімдерін тексеріңіз.</p>
+      </div>
+    </li>
+    <li>
+      <span class="email-step-number">3</span>
+      <div>
+        <strong>Хаттағы растау сілтемесін басыңыз.</strong>
+        <p>Растау сілтемесін басқаннан кейін сайтқа қайта оралып, аккаунтыңызға кіріңіз.</p>
+      </div>
+    </li>
+  </ol>
+
+  <a class="email-confirmation-gmail-button"
+     href="https://mail.google.com/"
+     target="_blank"
+     rel="noopener noreferrer">
+    Gmail поштасын ашу ↗
+  </a>
+
+  <p class="email-confirmation-note">
+    Gmail қолданбасаңыз, өзіңіздің пошта сервисіңізді ашыңыз. Растау хатын таппасаңыз,
+    тіркелу кезінде электрондық поштаңызды дұрыс енгізгеніңізді тексеріңіз.
+  </p>
+</div>
+
+
+CSS — САЙТТЫҢ НЕГІЗГІ CSS ФАЙЛЫНА НЕМЕСЕ <style> БӨЛІГІНЕ ҚОСУ:
+
+.email-confirmation-notice {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 18px 0;
+  padding: 24px;
+  border: 2px solid #f0a33a;
+  border-radius: 18px;
+  background: #fffaf0;
+  color: #172033;
+  font-size: 17px;
+  line-height: 1.55;
+  text-align: left;
+  box-shadow: 0 6px 20px rgba(27, 42, 77, 0.08);
+}
+
+.email-confirmation-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 12px;
+}
+
+.email-confirmation-heading h2 {
+  margin: 0;
+  color: #9a4b00;
+  font-size: clamp(21px, 2.5vw, 27px);
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.email-confirmation-icon {
+  display: inline-flex;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #ffedc9;
+  font-size: 25px;
+}
+
+.email-confirmation-intro {
+  margin: 8px 0 18px;
+  font-size: 17px;
+}
+
+.email-confirmation-steps {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.email-confirmation-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #f4d7a7;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.email-step-number {
+  display: inline-flex;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #3156c8;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.email-confirmation-steps strong {
+  display: block;
+  margin: 1px 0 3px;
+  font-size: 17px;
+}
+
+.email-confirmation-steps p {
+  margin: 0;
+  color: #465064;
+  font-size: 15px;
+}
+
+.email-confirmation-gmail-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 18px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: #3156c8;
+  color: #ffffff !important;
+  font-size: 16px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.email-confirmation-gmail-button:hover {
+  background: #2445a8;
+}
+
+.email-confirmation-note {
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid #ead9bf;
+  color: #5b6474;
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .email-confirmation-notice {
+    padding: 17px;
+    border-radius: 14px;
+    font-size: 16px;
+  }
+
+  .email-confirmation-heading h2 {
+    font-size: 21px;
+  }
+
+  .email-confirmation-steps li {
+    gap: 10px;
+    padding: 11px;
+  }
+
+  .email-confirmation-steps strong {
+    font-size: 16px;
+  }
+
+  .email-confirmation-steps p {
+    font-size: 14px;
+  }
+
+  .email-confirmation-gmail-button {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+
+ТЕКСТ, КОТОРЫЙ ДОЛЖЕН ВИДЕТЬ УЧИТЕЛЬ:
+«Тіркелу әлі аяқталған жоқ! ҚМЖ Generator-ды пайдалану үшін электрондық поштаңызды растауыңыз қажет. Поштаңызды ашыңыз → ҚМЖ Generator жіберген хатты табыңыз → хаттағы растау сілтемесін басыңыз → сайтқа қайта оралып, аккаунтыңызға кіріңіз.»
+
+ЕСКЕРТУ:
+Бұл код тек хабарламаның көрінісін жақсартады. Ол растау хатын жіберу немесе Supabase аутентификациясын өзгертпейді. Сайт құрылымына қарай HTML блогын ескі хабарлама көрсетілетін компонентке қою қажет. Жарияламас бұрын жаңа тест аккаунтпен тіркелуді тексеріңіз.
